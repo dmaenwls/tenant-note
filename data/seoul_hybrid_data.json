@@ -1,0 +1,183 @@
+{
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [
+                            126.920,
+                            37.470
+                        ],
+                        [
+                            126.940,
+                            37.470
+                        ],
+                        [
+                            126.940,
+                            37.490
+                        ],
+                        [
+                            126.920,
+                            37.490
+                        ],
+                        [
+                            126.920,
+                            37.470
+                        ]
+                    ]
+                ]
+            },
+            "properties": {
+                "adm_nm": "신림동(관악)",
+                "grade": "D",
+                "is_target": true,
+                "scores": {
+                    "safety": 45,
+                    "comfort": 30,
+                    "living": 50,
+                    "infra": 20
+                },
+                "stats": {
+                    "cctv": 12,
+                    "infra": 5,
+                    "viol_rate": 0.35
+                },
+                "detail_data": {
+                    "cctv": [
+                        [
+                            126.925,
+                            37.475
+                        ],
+                        [
+                            126.928,
+                            37.478
+                        ],
+                        [
+                            126.932,
+                            37.482
+                        ],
+                        [
+                            126.922,
+                            37.485
+                        ],
+                        [
+                            126.935,
+                            37.472
+                        ]
+                    ]
+                }
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [
+                            127.010,
+                            37.480
+                        ],
+                        [
+                            127.030,
+                            37.480
+                        ],
+                        [
+                            127.030,
+                            37.500
+                        ],
+                        [
+                            127.010,
+                            37.500
+                        ],
+                        [
+                            127.010,
+                            37.480
+                        ]
+                    ]
+                ]
+            },
+            "properties": {
+                "adm_nm": "서초동(서초)",
+                "grade": "A",
+                "is_target": true,
+                "scores": {
+                    "safety": 90,
+                    "comfort": 85,
+                    "living": 88,
+                    "infra": 95
+                },
+                "stats": {
+                    "cctv": 50,
+                    "infra": 30,
+                    "viol_rate": 0.02
+                },
+                "detail_data": {
+                    "cctv": [
+                        [
+                            127.015,
+                            37.485
+                        ],
+                        [
+                            127.025,
+                            37.495
+                        ],
+                        [
+                            127.020,
+                            37.490
+                        ]
+                    ]
+                }
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [
+                            126.950,
+                            37.550
+                        ],
+                        [
+                            126.970,
+                            37.550
+                        ],
+                        [
+                            126.970,
+                            37.570
+                        ],
+                        [
+                            126.950,
+                            37.570
+                        ],
+                        [
+                            126.950,
+                            37.550
+                        ]
+                    ]
+                ]
+            },
+            "properties": {
+                "adm_nm": "일반동(비타겟)",
+                "grade": "B",
+                "is_target": false,
+                "scores": {
+                    "safety": 70,
+                    "comfort": 60,
+                    "living": 65,
+                    "infra": 70
+                },
+                "stats": {
+                    "cctv": 20,
+                    "infra": 10,
+                    "viol_rate": 0.10
+                }
+            }
+        }
+    ]
+}

@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>내 주거 취향 밸런스 게임 - 테넌트 노트</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;700&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+
+        .font-jua {
+            font-family: 'Jua', sans-serif;
+        }
+
+        .tap-effect:active {
+            transform: scale(0.95);
+            transition: transform 0.1s;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .progress-bar-fill {
+            transition: width 0.3s ease-in-out;
+        }
+
+        /* Glassmorphism for Result */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+    </style>
+    <script src="js/config.js"></script>
+</head>
+
+<body class="bg-indigo-50 text-slate-900 h-screen overflow-hidden flex flex-col items-center justify-center">
+
+    <!-- Screen 1: Start -->
+    <div id="start-screen"
+        class="w-full max-w-md h-full flex flex-col p-8 bg-white shadow-2xl relative items-center justify-center text-center">
+        <div
+            class="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-indigo-100 to-white -z-10 rounded-b-[3rem]">
+        </div>
+
+        <div class="mb-6 animate-bounce">
+            <span class="text-6xl">🏡</span>
+        </div>
+
+        <h1 class="text-4xl font-jua text-indigo-600 mb-4 leading-tight">
+            내 주거 성향<br>
+            <span class="text-slate-800">MBTI 테스트</span>
+        </h1>
+        <p class="text-slate-500 mb-10 text-lg">16가지 유형으로 분석하는<br>소름돋는 내 집 찾기 스타일</p>
+
+        <button onclick="startGame()"
+            class="tap-effect w-full max-w-xs bg-indigo-600 text-white text-xl font-bold py-4 rounded-2xl shadow-lg hover:bg-indigo-700 transition-all flex items-center justify-center gap-2">
+            테스트 시작하기 <i class="fa-solid fa-arrow-right"></i>
+        </button>
+
+        <p class="mt-4 text-xs text-slate-400">참여자수: 12,453명</p>
+    </div>
+
+    <!-- Screen 2: Game (Questions) -->
+    <div id="game-screen" class="hidden w-full max-w-md h-full flex flex-col bg-slate-50 shadow-2xl relative">
+        <!-- Header -->
+        <div class="px-6 pt-12 pb-4 bg-white rounded-b-3xl shadow-sm z-10">
+            <div class="flex justify-between items-end mb-2">
+                <span class="text-indigo-600 font-black text-xl italic" id="q-counter-text">Q1</span>
+                <span class="text-slate-300 text-xs font-bold">Total 16</span>
+            </div>
+            <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+                <div id="progress-bar" class="progress-bar-fill bg-indigo-500 h-full w-[0%] rounded-full relative">
+                    <div class="absolute right-0 top-0 bottom-0 w-2 bg-white/30"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Question -->
+        <div class="flex-1 flex flex-col items-center justify-center p-6" id="question-container">
+            <h2 id="question-text"
+                class="text-2xl font-bold text-center leading-relaxed break-keep text-slate-800 mb-10 font-jua">
+                질문 텍스트...
+            </h2>
+
+            <div class="w-full space-y-4">
+                <!-- Option A -->
+                <button onclick="selectOption(0)"
+                    class="group tap-effect w-full bg-white border-2 border-indigo-50 hover:border-indigo-500 hover:bg-indigo-50 p-6 rounded-2xl shadow-sm hover:shadow-md transition-all text-left relative overflow-hidden">
+                    <div
+                        class="absolute top-3 left-3 w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-xs group-hover:bg-indigo-500 group-hover:text-white transition-colors">
+                        A</div>
+                    <span id="btn-text-a"
+                        class="text-lg font-bold text-slate-700 group-hover:text-indigo-700 leading-snug block pl-6">
+                        선택지 A
+                    </span>
+                </button>
+
+                <!-- Option B -->
+                <button onclick="selectOption(1)"
+                    class="group tap-effect w-full bg-white border-2 border-slate-50 hover:border-pink-500 hover:bg-pink-50 p-6 rounded-2xl shadow-sm hover:shadow-md transition-all text-left relative overflow-hidden">
+                    <div
+                        class="absolute top-3 left-3 w-6 h-6 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center font-bold text-xs group-hover:bg-pink-500 group-hover:text-white transition-colors">
+                        B</div>
+                    <span id="btn-text-b"
+                        class="text-lg font-bold text-slate-700 group-hover:text-pink-700 leading-snug block pl-6">
+                        선택지 B
+                    </span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Screen 3: Result -->
+    <div id="result-screen"
+        class="hidden w-full max-w-md h-full flex flex-col bg-white shadow-2xl relative overflow-y-auto">
+        <div
+            class="relative w-full h-48 bg-indigo-600 flex items-center justify-center shrink-0 rounded-b-[3rem] -mb-16 z-0">
+            <div class="text-center text-white pb-10">
+                <p class="text-sm opacity-80 mb-1">나의 주거 성향은?</p>
+                <h1 class="text-3xl font-jua tracking-wide" id="result-type-name">유형 이름</h1>
+            </div>
+        </div>
+
+        <div class="px-6 pb-12 z-10 flex-1 flex flex-col">
+            <!-- Card -->
+            <div class="glass-card bg-white rounded-3xl p-6 shadow-xl mb-6 text-center animate-fade-in-up">
+                <div class="text-6xl mb-4" id="result-emoji">😎</div>
+                <h2 id="result-title" class="text-xl font-bold text-indigo-900 mb-2"></h2>
+                <div class="w-full h-0.5 bg-indigo-50 my-4"></div>
+                <p id="result-desc" class="text-slate-600 leading-relaxed font-medium break-keep text-sm">
+                    결과 설명 텍스트...
+                </p>
+                <div class="mt-4 flex flex-wrap gap-2 justify-center" id="result-tags">
+                    <!-- Tags injected here -->
+                </div>
+            </div>
+
+            <!-- Other Types Section -->
+            <div id="other-types-section" class="mt-6 mb-8 w-full hidden animate-fade-in-up">
+                <h3 class="text-xs font-bold text-slate-400 text-center mb-4">다른 15가지 유형도 구경해봐요! 👀</h3>
+                <div id="other-types-grid" class="grid grid-cols-4 gap-2">
+                    <!-- Injected via JS -->
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="space-y-3 mt-auto">
+                <button onclick="goToMap()"
+                    class="tap-effect w-full bg-indigo-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-indigo-700 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-map-location-dot"></i>
+                    내 맞춤 동네 지도 보기
+                </button>
+
+                <button onclick="shareResult()"
+                    class="tap-effect w-full bg-slate-100 text-slate-700 font-bold py-3.5 rounded-xl hover:bg-slate-200 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-share-nodes"></i>
+                    친구에게 공유하기
+                </button>
+
+                <button onclick="location.reload()" class="w-full py-3 text-slate-400 text-sm hover:text-indigo-500">
+                    <i class="fa-solid fa-rotate-right mr-1"></i> 다시 테스트하기
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        // --- 1. Constants & Data ---
+        // Axes: safety, traffic, infra, cost, nature, quality
+
+        const PERSONAS = [
+            { id: 'safety_guard', name: "청와대 경호실장형", emoji: "👮‍♂️", desc: "안전이 최우선! 집 가는 길 치안 등급부터 방범창 유무까지 꼼꼼히 체크하는 당신. 마음 편히 꿀잠 잘 수 있는 요새 같은 집이 필요해요.", traits: { safety: 10, quality: 5 } },
+            { id: 'traffic_teleport', name: "순간이동 능력자형", emoji: "⚡", desc: "역세권이 곧 복지다! 지하철역 도보 5분 컷 아니면 외출을 거부하는 효율 중심파. 출퇴근 시간 단축이 인생의 목표시군요.", traits: { traffic: 10, infra: 5 } },
+            { id: 'infra_cvs', name: "프로 편의점 러버형", emoji: "🏪", desc: "슬리퍼 신고 모든 걸 해결해야 직성이 풀리는 타입. 편의점, 코인세탁소, 다이소가 내 집 냉장고고 드레스룸이죠.", traits: { infra: 10, cost: 5 } },
+            { id: 'cost_saver', name: "실속파 갓생러형", emoji: "💰", desc: "잠만 자는 방에 돈 쓰기 싫어! 월세를 아껴서 투자하고 미래를 준비하는 야망가. 가성비 좋은 숨은 보석을 찾아내는 능력이 탁월해요.", traits: { cost: 10, traffic: 5 } },
+            { id: 'infra_edu', name: "대치동 학원가 드리프트형", emoji: "🎓", desc: "맹모삼천지교! 내 직장보다 아이 학원 위치가 더 중요한 교육열 만렙 부모님. 학군 좋고 유해시설 없는 클린한 동네를 선호해요.", traits: { infra: 8, safety: 7, nature: -2 } },
+            { id: 'nature_hermit', name: "숲세권 은둔 고수형", emoji: "🌲", desc: "창문 열면 벽뷰는 질색! 숲뷰, 공원뷰를 보며 힐링해야 하는 자연인. 도심 속에서도 새소리를 들을 수 있는 숲세권을 찾아다니네요.", traits: { nature: 10, traffic: -2 } },
+            { id: 'infra_food', name: "배달의민족 VVIP형", emoji: "🛵", desc: "맛집 배달 안 되는 지역은 유배지나 다름없음. 배달비 0원 구역과 먹자골목 근처를 사랑하는 진정한 미식가!", traits: { infra: 8, cost: 2 } },
+            { id: 'traffic_gangnam', name: "강남행 교두보 헌터형", emoji: "🏙️", desc: "몸테크해서라도 강남 진입을 노린다! 강남 접근성이 좋다면 낡은 빌라도 OK. 성공을 향해 달리는 당신의 열정을 응원합니다.", traits: { traffic: 9, cost: -5, quality: -2 } },
+            { id: 'nature_active', name: "한강공원 러닝 크루형", emoji: "🏃", desc: "한강 러닝 못 하면 근손실 오는 타입. 운동하기 좋고 산책로가 잘 정비된 수변 공원 근처가 당신의 로망 하우스!", traits: { nature: 9, infra: 5 } },
+            { id: 'quality_option', name: "풀옵션 미니멀리스트형", emoji: "🧳", desc: "가구 살 돈도, 시간도 아깝다! 몸만 들어가면 해결되는 풀옵션 신축 오피스텔을 선호하는 심플 라이프 추구자.", traits: { quality: 9, cost: -2 } },
+            { id: 'quality_parking', name: "주차장 보안 요원형", emoji: "🚗", desc: "내 차 긁히면 전쟁이야! 기계식 주차는 NO, 자주식 주차장 1.2대 이상 필수. 차를 끔찍이 아끼는 오너 드라이버.", traits: { quality: 8, traffic: 5 } },
+            { id: 'quality_sound', name: "프로 집콕러형", emoji: "🎧", desc: "집은 최고의 휴식처. 층간소음은 절대 용납 못 해! 방음 잘 되고 조용한 주택가에서 나만의 시간을 즐기고 싶어해요.", traits: { quality: 10, infra: -2 } },
+            { id: 'safety_community', name: "우리 동네 보안관형", emoji: "👮‍♀️", desc: "밤길 무서운 건 딱 질색. 24시간 경비원이 상주하고 커뮤니티 치안이 확실한 대단지나 오피스텔을 선호하시네요.", traits: { safety: 9, infra: 6 } },
+            { id: 'quality_new', name: "가성비 신도시 이주민형", emoji: "🏗️", desc: "서울의 낡은 빌라 사느니 경기도 신축 아파트 간다! 쾌적한 주거 환경과 넓은 평수를 중요하게 생각하는 실리파.", traits: { quality: 9, traffic: -5 } },
+            { id: 'infra_living', name: "1인 가구 세탁 요정형", emoji: "🧺", desc: "빨래방, 수선집, 24시 마트가 가까워야 해! 혼자 살아도 불편함 없이 살 수 있는 생활 밀착형 인프라를 중요시해요.", traits: { infra: 9, safety: 3 } },
+            { id: 'quality_community', name: "커뮤니티 정복자형", emoji: "🏊", desc: "수영장, 헬스장, 독서실 딸린 아파트가 내 로망. 집 밖으로 안 나가도 단지 내에서 모든 걸 해결하고 싶은 리조트족.", traits: { quality: 10, nature: 5 } }
+        ];
+
+        const QUESTIONS = [
+            // Q1: Safety
+            {
+                q: "집을 구할 때 더 마음이 가는 문구는?",
+                a: { text: "CCTV·현관 보안 완벽 (안심 귀가)", scores: { safety: 5, quality: 2 } },
+                b: { text: "밤늦게까지 핫한 힙플레이스", scores: { infra: 5, safety: -2 } }
+            },
+            // Q2: Traffic
+            {
+                q: "아침 출근길, 나의 허용 범위는?",
+                a: { text: "지옥철 30분 서서 가기 (시간 단축)", scores: { traffic: 5, quality: -2 } },
+                b: { text: "앉아서 1시간 가기 (편안함)", scores: { quality: 3, traffic: -5 } }
+            },
+            // Q3: Infra
+            {
+                q: "주말 점심, 밥 먹으러 나갈 때",
+                a: { text: "슬리퍼 신고 3분 컷 편의점/분식집", scores: { infra: 5 } },
+                b: { text: "차 타고 나가서 맛집 탐방", scores: { quality: 2, traffic: 2 } }
+            },
+            // Q4: Cost vs Quality
+            {
+                q: "월세 10만원 더 내면?",
+                a: { text: "신축 풀옵션, 몸만 오세요", scores: { quality: 5, cost: -5 } },
+                b: { text: "좀 낡았지만 저축 가능, 갓성비", scores: { cost: 5, quality: -2 } }
+            },
+            // Q5: Nature
+            {
+                q: "창문을 열었을 때 보이는 뷰는?",
+                a: { text: "탁 트인 공원/숲 뷰 (힐링)", scores: { nature: 5, traffic: -2 } },
+                b: { text: "화려한 시티뷰 (성공의 맛)", scores: { traffic: 3, infra: 2 } }
+            },
+            // Q6: Safety vs Cost
+            {
+                q: "골목길 가로등이 어둡다면?",
+                a: { text: "절대 계약 안 함. 무서워!", scores: { safety: 5 } },
+                b: { text: "월세 싸면 뭐... 핸드폰 불 켜지", scores: { cost: 5, safety: -2 } }
+            },
+            // Q7: Traffic (Gangnam)
+            {
+                q: "친구 약속, 주로 어디서 잡아?",
+                a: { text: "강남/홍대 무조건 핫플", scores: { traffic: 5, infra: 2 } },
+                b: { text: "우리 동네 홈파티 or 조용한 곳", scores: { quality: 3, infra: -2 } }
+            },
+            // Q8: Quality (Noise)
+            {
+                q: "가장 참을 수 없는 것은?",
+                a: { text: "윗집 쿵쿵 층간소음", scores: { quality: 5 } },
+                b: { text: "집 앞 도로 차 소리", scores: { nature: 2, traffic: -2 } }
+            },
+            // Q9: Infra (Food)
+            {
+                q: "배달 어플을 켰는데 '배달 불가' 지역이라면?",
+                a: { text: "당장 이사 간다", scores: { infra: 5 } },
+                b: { text: "직접 해먹으면 되지 뭐 (요리왕)", scores: { cost: 2 } }
+            },
+            // Q10: Quality (Option vs Space)
+            {
+                q: "둘 중 하나만 선택한다면?",
+                a: { text: "좁아도 신축+풀옵션", scores: { quality: 5, cost: -2 } },
+                b: { text: "구축이라도 운동장만한 방", scores: { cost: 3, quality: -2 } }
+            }, // Space mapped to Cost/Value here or distinct? Let's use Cost for space efficiency
+            // Q11: Nature (Active)
+            {
+                q: "퇴근 후 나의 루틴은?",
+                a: { text: "집 근처 공원 러닝/산책", scores: { nature: 5, quality: 2 } },
+                b: { text: "넷플릭스 보면서 뒹굴뒹굴", scores: { quality: 3, infra: 2 } }
+            },
+            // Q12: Quality (Parking)
+            {
+                q: "차가 있는데 주차장이 없다면?",
+                a: { text: "공영주차장 알아본다", scores: { cost: 3 } },
+                b: { text: "그 집에 어떻게 살아? 절대 불가", scores: { quality: 5 } }
+            },
+            // Q13: Safety (Community)
+            {
+                q: "1층 공동현관 보안문이 고장 났다면?",
+                a: { text: "택배 받기 편하고 좋네 (긍정왕)", scores: { infra: 2, safety: -3 } },
+                b: { text: "불안해서 집주인에게 바로 전화", scores: { safety: 5 } }
+            },
+            // Q14: Quality (Community)
+            {
+                q: "대단지 아파트 커뮤니티 시설 (헬스장, 독서실)",
+                a: { text: "있으면 무조건 쓴다. 로망임", scores: { quality: 5, cost: -2 } },
+                b: { text: "관리비만 비싸지... 안 씀", scores: { cost: 5 } }
+            },
+            // Q15: Traffic vs Nature
+            {
+                q: "언덕 위에 있는 뷰 맛집",
+                a: { text: "매일 등산? 절대 못 해", scores: { traffic: 5 } },
+                b: { text: "뷰가 깡패다. 낭만 선택", scores: { nature: 5, traffic: -3 } }
+            },
+            // Q16: Final
+            {
+                q: "부동산 구할 때 1순위 필터는?",
+                a: { text: "가격 (보증금/월세)", scores: { cost: 8 } },
+                b: { text: "위치 (역세권/안전)", scores: { traffic: 4, safety: 4 } }
+            }
+        ];
+
+        // --- 2. State & Logic ---
+        let currentStep = 0;
+        let userScores = { safety: 0, traffic: 0, infra: 0, cost: 0, nature: 0, quality: 0 };
+
+        function startGame() {
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            const q = QUESTIONS[currentStep];
+
+            // Progress Bar
+            const progress = ((currentStep + 1) / QUESTIONS.length) * 100;
+            document.getElementById('progress-bar').style.width = `${progress}%`;
+            document.getElementById('q-counter-text').innerText = `Q${currentStep + 1}`;
+
+            // Content
+            const container = document.getElementById('question-container');
+            container.classList.remove('fade-in');
+            void container.offsetWidth; // Reflow
+            container.classList.add('fade-in');
+
+            document.getElementById('question-text').innerText = q.q;
+            document.getElementById('btn-text-a').innerText = q.a.text;
+            document.getElementById('btn-text-b').innerText = q.b.text;
+        }
+
+        function selectOption(idx) {
+            const q = QUESTIONS[currentStep];
+            const choice = idx === 0 ? q.a : q.b;
+
+            // Accumulate Scores
+            for (const [key, val] of Object.entries(choice.scores)) {
+                if (userScores[key] !== undefined) {
+                    userScores[key] += val;
+                }
+            }
+
+            currentStep++;
+            if (currentStep < QUESTIONS.length) {
+                renderQuestion();
+            } else {
+                finishGame();
+            }
+        }
+
+        function finishGame() {
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+
+            // Calculate Best Match
+            // Logic: Compare user score vector with persona trait vector
+            // Similarity = -Distance (Euclidean)
+            // Or simple weighted sum? 
+            // Let's use: Score(Persona) = Sum(User[trait] * Persona[trait])
+            // This emphasizes traits that both user and persona value high.
+
+            let bestPersona = null;
+            let maxScore = -Infinity;
+
+            PERSONAS.forEach(p => {
+                let score = 0;
+                for (const [trait, weight] of Object.entries(p.traits)) {
+                    // If user has high score in this trait, add to score
+                    const userVal = userScores[trait] || 0;
+                    score += userVal * weight;
+                }
+
+                if (score > maxScore) {
+                    maxScore = score;
+                    bestPersona = p;
+                }
+            });
+
+            // Render Result
+            document.getElementById('result-type-name').innerText = bestPersona.name;
+            document.getElementById('result-title').innerText = bestPersona.desc.split('.')[0] + ".";
+            document.getElementById('result-desc').innerText = bestPersona.desc;
+            document.getElementById('result-emoji').innerText = bestPersona.emoji;
+
+            // Generate Tags
+            const tagsDiv = document.getElementById('result-tags');
+            tagsDiv.innerHTML = '';
+            const topTraits = Object.entries(bestPersona.traits)
+                .sort(([, a], [, b]) => b - a)
+                .slice(0, 3);
+
+            topTraits.forEach(([t, v]) => {
+                let label = t.toUpperCase();
+                if (t === 'safety') label = '#안전제일';
+                if (t === 'traffic') label = '#역세권';
+                if (t === 'infra') label = '#슬세권';
+                if (t === 'cost') label = '#가성비';
+                if (t === 'nature') label = '#숲세권';
+                if (t === 'quality') label = '#신축/옵션';
+
+                const span = document.createElement('span');
+                span.className = "bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-xs font-bold";
+                span.innerText = label;
+                tagsDiv.appendChild(span);
+            });
+
+            window.resultId = bestPersona.id;
+            renderOtherTypes(bestPersona.id);
+        }
+
+        function renderOtherTypes(currentId) {
+            const grid = document.getElementById('other-types-grid');
+            const section = document.getElementById('other-types-section');
+            if (!grid || !section) return;
+
+            const others = PERSONAS.filter(p => p.id !== currentId);
+
+            grid.innerHTML = others.map(item => `
+                <div onclick="showPreview('${item.id}')" class="flex flex-col items-center justify-center p-2 bg-white rounded-xl shadow-sm border border-slate-100 cursor-pointer hover:scale-105 hover:shadow-md transition-all active:scale-95">
+                    <span class="text-2xl mb-1 filter drop-shadow-sm">${item.emoji}</span>
+                    <span class="text-[0.6rem] font-bold text-slate-500 text-center leading-tight break-keep">${item.name.replace('형', '')}</span>
+                </div>
+            `).join('');
+
+            section.classList.remove('hidden');
+        }
+
+        function showPreview(id) {
+            // Simple preview mechanism: just alert or reload for now, 
+            // or we could swap the result card content. 
+            // For MVP, let's swap the content to show that type.
+            const p = PERSONAS.find(item => item.id === id);
+            if (p) {
+                document.getElementById('result-type-name').innerText = p.name;
+                document.getElementById('result-title').innerText = p.desc.split('.')[0] + ".";
+                document.getElementById('result-desc').innerText = p.desc;
+                document.getElementById('result-emoji').innerText = p.emoji;
+
+                // Re-render tags
+                const tagsDiv = document.getElementById('result-tags');
+                tagsDiv.innerHTML = '';
+                const topTraits = Object.entries(p.traits).sort(([, a], [, b]) => b - a).slice(0, 3);
+                topTraits.forEach(([t, v]) => {
+                    let label = t.toUpperCase();
+                    if (t === 'safety') label = '#안전제일';
+                    if (t === 'traffic') label = '#역세권';
+                    if (t === 'infra') label = '#슬세권';
+                    if (t === 'cost') label = '#가성비';
+                    if (t === 'nature') label = '#숲세권';
+                    if (t === 'quality') label = '#신축/옵션';
+                    const span = document.createElement('span');
+                    span.className = "bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-xs font-bold";
+                    span.innerText = label;
+                    tagsDiv.appendChild(span);
+                });
+
+                window.resultId = p.id; // Update mapping for "Go To Map"
+                renderOtherTypes(p.id); // Re-render grid to exclude new current
+
+                // Scroll to top
+                document.getElementById('result-screen').scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function goToMap() {
+            // Find numeric ID (1~16) based on index
+            // reviews.html expects type=1..16
+            const index = PERSONAS.findIndex(p => p.id === window.resultId);
+            const numericId = index + 1;
+
+            // Redirect with type parameter
+            window.location.href = `reviews.html?type=${numericId}`;
+        }
+
+        function shareResult() {
+            if (navigator.share) {
+                navigator.share({
+                    title: '내 주거 성향 MBTI',
+                    text: `나는 ${document.getElementById('result-type-name').innerText}! 너도 한번 해봐.`,
+                    url: window.location.href
+                });
+            } else {
+                alert("링크가 복사되었습니다!");
+            }
+        }
+
+    </script>
+</body>
+
+</html>

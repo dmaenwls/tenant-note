@@ -1,0 +1,2467 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tenant Note | 세입자를 위한 안전 지킴이</title>
+    <meta name="description" content="등기부등본 분석부터 실거주 찐후기까지. 2030 전월세 계약의 모든 것.">
+    <meta property="og:title" content="Tenant Note - 내 보증금 지키는 가장 쉬운 방법">
+    <meta property="og:description" content="현직 감정평가사가 만든 전월세 안전 진단 & 가이드">
+    <meta property="og:image" content="https://via.placeholder.com/1200x630/2563eb/ffffff?text=Tenant+Note">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" as="style" crossorigin
+        href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Moved here per refactoring request -->
+    <script type="text/javascript"
+        src="//dapi.kakao.com/v2/maps/sdk.js?appkey=693e61b56c8dfdcac6b196b6fa46e513&libraries=services,clusterer"></script>
+    <script src="js/config.js"></script>
+    <style>
+        body {
+            font-family: "Pretendard Variable", Pretendard, sans-serif;
+            overflow: hidden;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a1a1a1;
+        }
+
+        /* Listing Marker Styles */
+        .listing-marker {
+            background: #2563eb;
+            color: white;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-weight: bold;
+            font-size: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            white-space: nowrap;
+            position: relative;
+        }
+
+        .listing-marker:hover {
+            transform: scale(1.1) translateY(-2px);
+            background: #1d4ed8;
+            z-index: 60 !important;
+        }
+
+        .listing-marker::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-top: 4px solid #2563eb;
+        }
+
+        .listing-marker:hover::after {
+            border-top-color: #1d4ed8;
+        }
+
+        .listing-marker:hover::after {
+            border-top-color: #1d4ed8;
+        }
+
+        /* Grade Colors for Markers */
+        .marker-grade-A {
+            background: #22c55e !important;
+        }
+
+        /* Green */
+        .marker-grade-A::after {
+            border-top-color: #22c55e !important;
+        }
+
+        .marker-grade-B {
+            background: #eab308 !important;
+        }
+
+        /* Yellow */
+        .marker-grade-B::after {
+            border-top-color: #eab308 !important;
+        }
+
+        .marker-grade-C {
+            background: #f97316 !important;
+        }
+
+        /* Orange */
+        .marker-grade-C::after {
+            border-top-color: #f97316 !important;
+        }
+
+        .marker-grade-D {
+            background: #ef4444 !important;
+        }
+
+        /* Red */
+        .marker-grade-D::after {
+            border-top-color: #ef4444 !important;
+        }
+
+        /* Custom Map Overlay Tooltip Style (from Request) */
+        .customoverlay {
+            position: relative;
+            bottom: 50px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            border-bottom: 2px solid #ddd;
+            float: left;
+        }
+
+        .customoverlay:nth-of-type(n) {
+            border: 0;
+            box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .customoverlay a {
+            display: block;
+            text-decoration: none;
+            color: #222;
+            text-align: center;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: bold;
+            overflow: hidden;
+            background: #fff;
+            background: #fff url('https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/arrow_white.png') no-repeat right 10px center;
+        }
+
+        .customoverlay .title {
+            display: block;
+            text-align: center;
+            background: #fff;
+            margin-right: 30px;
+            padding: 8px 10px;
+            font-size: 12px;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .customoverlay:after {
+            content: '';
+            position: absolute;
+            margin-left: -10px;
+            left: 50%;
+            bottom: -10px;
+            width: 20px;
+            height: 10px;
+            background: url('https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/vertex_white.png');
+        }
+
+        /* Sidebar Transition */
+        aside {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Filter Buttons */
+        .filter-type-btn.active {
+            background-color: #2563eb;
+            color: white;
+            border-color: #2563eb;
+        }
+
+        .filter-size-btn.active {
+            background-color: #eff6ff;
+            color: #2563eb;
+            border-color: #2563eb;
+            font-weight: 700;
+        }
+
+        .deal-toggle-btn.active {
+            background: white;
+            color: #2563eb;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        }
+
+        /* Toast Message */
+        #toast-container {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: none;
+        }
+
+        .toast-msg {
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            animation: toastFadeIn 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+            backdrop-filter: blur(4px);
+        }
+
+        @keyframes toastFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .toast-out {
+            animation: toastFadeOut 0.3s forwards;
+        }
+
+        @keyframes toastFadeOut {
+            to {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+        }
+
+        /* CCTV Marker */
+        .cctv-marker {
+            width: 24px;
+            height: 24px;
+            background-color: #2563eb;
+            /* Blue-600 */
+            border: 2px solid white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            animation: popIn 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+        }
+
+        @keyframes popIn {
+            from {
+                transform: scale(0);
+            }
+
+            to {
+                transform: scale(1);
+            }
+        }
+
+        /* Personalization Toast */
+        #persona-toast {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            box-shadow: 0 10px 25px rgba(79, 70, 229, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 text-slate-900 h-screen flex flex-col">
+
+    <!-- Persona Toast (Initially Hidden) -->
+    <div id="persona-toast"
+        class="fixed top-24 left-1/2 transform -translate-x-1/2 z-[100] px-6 py-4 rounded-full shadow-2xl flex items-center gap-4 hidden animate-fade-in-up">
+        <div class="bg-white/20 rounded-full w-10 h-10 flex items-center justify-center text-xl shrink-0">
+            <span id="persona-emoji">🛡️</span>
+        </div>
+        <div>
+            <p class="text-sm font-bold text-indigo-100 mb-0.5">내 주거 성향 분석 완료!</p>
+            <p class="font-bold text-white text-base"><span id="persona-name" class="text-yellow-300">청와대 경호실장형</span>
+                맞춤 지도를 보여드려요.</p>
+        </div>
+        <button onclick="document.getElementById('persona-toast').classList.add('hidden')"
+            class="text-white/70 hover:text-white ml-2">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
+
+    <!-- Header -->
+    <header class="sticky top-0 z-50 w-full border-b border-gray-200 bg-white/95 backdrop-blur-md">
+        <div class="mx-auto flex h-24 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+            <a href="index.html" class="flex flex-col leading-none group">
+                <div class="flex items-center gap-1.5">
+                    <span
+                        class="text-2xl font-black text-blue-600 tracking-tight group-hover:scale-105 transition-transform">Tenant
+                        Note</span>
+                    <span class="rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-bold text-blue-700">Beta</span>
+                </div>
+                <span class="text-xs font-medium text-gray-400 mt-1.5 tracking-wide">세입자를 위한 안전 지킴이</span>
+            </a>
+
+            <nav class="hidden md:flex items-center gap-10">
+                <a href="reviews.html" class="group flex flex-col items-center justify-center gap-1 py-2">
+                    <span class="text-lg font-bold text-gray-800 transition group-hover:text-blue-600">동네 분석</span>
+                    <span class="text-xs font-medium text-gray-500 transition group-hover:text-blue-500">여기 살기
+                        어때요?</span>
+                </a>
+                <a href="safety.html" class="group flex flex-col items-center justify-center gap-1 py-2">
+                    <span class="text-lg font-bold text-gray-800 transition group-hover:text-blue-600">물건 분석</span>
+                    <span class="text-xs font-medium text-gray-500 transition group-hover:text-blue-500">여기 계약해도
+                        될까?</span>
+                </a>
+                <a href="guide.html" class="group flex flex-col items-center justify-center gap-1 py-2">
+                    <span class="text-lg font-bold text-gray-800 transition group-hover:text-blue-600">계약/이사 가이드</span>
+                    <span class="text-xs font-medium text-gray-500 transition group-hover:text-blue-500">이제 뭘 해야
+                        하지?</span>
+                </a>
+                <a href="community.html" class="group flex flex-col items-center justify-center gap-1 py-2">
+                    <span class="text-lg font-bold text-gray-800 transition group-hover:text-blue-600">테넌트 라운지</span>
+                    <span class="text-xs font-medium text-gray-500 transition group-hover:text-blue-500">나랑 같은 고민
+                        상담</span>
+                </a>
+                <a href="insight.html" class="group flex flex-col items-center justify-center gap-1 py-2">
+                    <span class="text-lg font-bold text-gray-800 transition group-hover:text-blue-600">인사이트</span>
+                    <span class="text-xs font-medium text-gray-500 transition group-hover:text-blue-500">전문가의
+                        팩트체크</span>
+                </a>
+            </nav>
+
+            <div class="hidden md:flex items-center gap-4">
+                <button class="text-base font-semibold text-gray-500 hover:text-gray-900 transition">로그인</button>
+                <a href="#" onclick="document.getElementById('review-modal').classList.remove('hidden'); return false;"
+                    class="rounded-xl bg-blue-600 px-5 py-2.5 text-base font-bold text-white shadow-lg hover:bg-blue-500 transition hover:-translate-y-0.5">
+                    후기 남기기
+                </a>
+            </div>
+
+            <button id="mobile-menu-btn" class="md:hidden p-2 text-gray-600 hover:text-blue-600 focus:outline-none">
+                <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16">
+                    </path>
+                </svg>
+            </button>
+        </div>
+
+        <div id="mobile-menu" class="hidden md:hidden border-t border-gray-100 bg-white">
+            <div class="space-y-1 px-4 py-6">
+                <a href="reviews.html"
+                    class="block rounded-lg px-4 py-3 text-base font-bold text-gray-800 hover:bg-blue-50 hover:text-blue-600">동네
+                    분석 <span class="ml-2 text-xs font-normal text-gray-500">여기 살기 어때요?</span></a>
+                <a href="safety.html"
+                    class="block rounded-lg px-4 py-3 text-base font-bold text-gray-800 hover:bg-blue-50 hover:text-blue-600">물건
+                    분석 <span class="ml-2 text-xs font-normal text-gray-500">여기 계약해도 될까?</span></a>
+                <a href="guide.html"
+                    class="block rounded-lg px-4 py-3 text-base font-bold text-gray-800 hover:bg-blue-50 hover:text-blue-600">계약/이사
+                    가이드 <span class="ml-2 text-xs font-normal text-gray-500">이제 뭘 해야 하지?</span></a>
+                <a href="community.html"
+                    class="block rounded-lg px-4 py-3 text-base font-bold text-gray-800 hover:bg-blue-50 hover:text-blue-600">테넌트
+                    라운지
+                    <span class="ml-2 text-xs font-normal text-gray-500">나랑 같은 고민 상담</span></a>
+                <a href="insight.html"
+                    class="block rounded-lg px-4 py-3 text-base font-bold text-gray-800 hover:bg-blue-50 hover:text-blue-600">인사이트
+                    <span class="ml-2 text-xs font-normal text-gray-500">전문가의 팩트체크</span></a>
+                <div class="mt-6 border-t border-gray-100 pt-6">
+                    <a href="#"
+                        class="block w-full rounded-lg bg-gray-100 px-4 py-3 text-center text-base font-bold text-gray-600 hover:bg-gray-200">로그인</a>
+                    <a href="#"
+                        onclick="document.getElementById('review-modal').classList.remove('hidden'); return false;"
+                        class="mt-3 block w-full rounded-lg bg-blue-600 px-4 py-3 text-center text-base font-bold text-white hover:bg-blue-500">후기
+                        남기기</a>
+                </div>
+            </div>
+        </div>
+
+    </header>
+
+    <main class="flex-1 flex overflow-hidden relative">
+
+        <!-- Sidebar: Using existing content but wrapping in the requested structure -->
+        <aside id="sidebar"
+            class="w-full md:w-[400px] bg-white border-r border-gray-200 flex flex-col z-20 absolute md:relative h-full translate-y-full md:translate-y-0 shrink-0 shadow-2xl md:shadow-none transition-transform duration-300">
+            <!-- 1. Search & Filter Section -->
+            <div class="p-4 border-b border-slate-100 bg-white shrink-0 space-y-4">
+                <!-- Search -->
+                <div>
+                    <div class="relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400"></i>
+                        <input type="text" value="신림역" readonly
+                            class="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 focus:outline-none cursor-default">
+                    </div>
+                </div>
+
+                <!-- Deal Type Toggle -->
+                <div class="bg-slate-100 p-1 rounded-lg flex">
+                    <button onclick="setDealType('jeonse')" id="deal-jeonse"
+                        class="deal-toggle-btn flex-1 py-1.5 text-xs font-bold text-slate-500 rounded-md transition-all">전세</button>
+                    <button onclick="setDealType('monthly')" id="deal-monthly"
+                        class="deal-toggle-btn active flex-1 py-1.5 text-xs font-bold text-slate-500 rounded-md transition-all">월세</button>
+                </div>
+
+                <!-- Housing Type -->
+                <div>
+                    <span class="text-xs font-bold text-slate-400 mb-1.5 block">주거 유형 (중복 선택)</span>
+                    <div class="flex gap-2">
+                        <button onclick="toggleType('APT')"
+                            class="filter-type-btn active flex-1 py-2 rounded-lg border border-slate-200 bg-gray-50 text-xs font-medium text-slate-500 transition-colors"
+                            data-type="APT">아파트</button>
+                        <button onclick="toggleType('OP')"
+                            class="filter-type-btn active flex-1 py-2 rounded-lg border border-slate-200 bg-gray-50 text-xs font-medium text-slate-500 transition-colors"
+                            data-type="OP">오피스텔</button>
+                        <button onclick="toggleType('YH')"
+                            class="filter-type-btn active flex-1 py-2 rounded-lg border border-slate-200 bg-gray-50 text-xs font-medium text-slate-500 transition-colors"
+                            data-type="YH">연립/다세대</button>
+                        <button onclick="toggleType('DD')"
+                            class="filter-type-btn active flex-1 py-2 rounded-lg border border-slate-200 bg-gray-50 text-xs font-medium text-slate-500 transition-colors"
+                            data-type="DD">단독/다가구</button>
+                    </div>
+                </div>
+
+                <!-- Size -->
+                <div>
+                    <span class="text-xs font-bold text-slate-400 mb-1.5 block">평형대</span>
+                    <div class="flex gap-1.5 overflow-x-auto hide-scrollbar">
+                        <button onclick="setSize('all')"
+                            class="filter-size-btn active px-3 py-1.5 rounded-full border border-slate-200 text-xs font-medium text-slate-500 whitespace-nowrap"
+                            data-size="all">전체</button>
+                        <button onclick="setSize('under10')"
+                            class="filter-size-btn px-3 py-1.5 rounded-full border border-slate-200 text-xs font-medium text-slate-500 whitespace-nowrap"
+                            data-size="under10">~10평</button>
+                        <button onclick="setSize('10to20')"
+                            class="filter-size-btn px-3 py-1.5 rounded-full border border-slate-200 text-xs font-medium text-slate-500 whitespace-nowrap"
+                            data-size="10to20">10~20평</button>
+                        <button onclick="setSize('over30')"
+                            class="filter-size-btn px-3 py-1.5 rounded-full border border-slate-200 text-xs font-medium text-slate-500 whitespace-nowrap"
+                            data-size="over30">30평~</button>
+                    </div>
+                </div>
+
+                <!-- Budget Filter -->
+                <div class="mt-6 mb-2">
+                    <h3 class="text-xs font-bold text-slate-500 mb-2">예산 설정 (단위: 만원)</h3>
+                    <div class="space-y-2">
+                        <div>
+                            <label class="text-[10px] text-slate-400 mb-1 block">보증금/전세금</label>
+                            <div class="flex items-center gap-2">
+                                <input type="number" id="budget-dep-min" placeholder="최소" oninput="applyFilter()"
+                                    class="w-full bg-slate-50 border border-slate-200 rounded px-2 py-1 text-xs outline-none focus:border-blue-500">
+                                <span class="text-slate-400">~</span>
+                                <input type="number" id="budget-dep-max" placeholder="최대" oninput="applyFilter()"
+                                    class="w-full bg-slate-50 border border-slate-200 rounded px-2 py-1 text-xs outline-none focus:border-blue-500">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-slate-400 mb-1 block">월세</label>
+                            <div class="flex items-center gap-2">
+                                <input type="number" id="budget-rent-min" placeholder="최소" oninput="applyFilter()"
+                                    class="w-full bg-slate-50 border border-slate-200 rounded px-2 py-1 text-xs outline-none focus:border-blue-500">
+                                <span class="text-slate-400">~</span>
+                                <input type="number" id="budget-rent-max" placeholder="최대" oninput="applyFilter()"
+                                    class="w-full bg-slate-50 border border-slate-200 rounded px-2 py-1 text-xs outline-none focus:border-blue-500">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Listing Results -->
+            <div id="sidebar-content" class="flex-1 overflow-y-auto bg-slate-50 p-4 relative"
+                onscroll="handleScroll(this)">
+                <!-- Content will be injected here -->
+            </div>
+
+            <!-- Mobile Close -->
+            <div class="md:hidden p-3 bg-white border-t border-slate-100 text-center cursor-pointer"
+                onclick="toggleSidebar(false)">
+                <span class="text-sm font-bold text-slate-400">지도로 돌아가기</span>
+            </div>
+        </aside>
+
+        <!-- Right Content Area -->
+        <div class="flex-1 flex flex-col relative w-full h-full overflow-hidden">
+            <section class="flex-1 relative w-full h-full" id="map-container">
+                <div id="map" class="w-full h-full"></div>
+
+                <!-- Layer Options Wrapper -->
+                <div class="absolute top-4 right-4 z-20" id="layer-options-wrapper">
+                    <!-- Trigger Button -->
+                    <button onclick="toggleLayerPanel()" title="지도 옵션"
+                        class="w-10 h-10 bg-white rounded-lg shadow-md border border-slate-200 flex items-center justify-center hover:bg-slate-50 transition-colors cursor-pointer focus:outline-none">
+                        <i class="fa-solid fa-layer-group text-slate-700 text-lg"></i>
+                    </button>
+                    <!-- Unit Toggle Button -->
+                    <button onclick="toggleUnit()" title="단위 변환"
+                        class="mt-2 w-10 h-10 bg-white rounded-lg shadow-md border border-slate-200 flex flex-col items-center justify-center hover:bg-slate-50 transition-colors cursor-pointer focus:outline-none text-[10px] font-bold text-slate-600">
+                        <span id="unit-pyeong" class="text-blue-600">평</span>
+                        <span class="w-full h-[1px] bg-slate-100 my-0.5"></span>
+                        <span id="unit-m2" class="text-slate-400">㎡</span>
+                    </button>
+
+                    <!-- Popover Panel -->
+                    <div id="layer-options-panel"
+                        class="hidden absolute top-12 right-0 bg-white rounded-xl shadow-xl p-4 w-64 border border-slate-100 transition-all duration-200 ease-in-out">
+                        <h4 class="font-bold text-gray-800 mb-3 flex items-center gap-2 text-sm">
+                            <i class="fa-solid fa-layer-group text-blue-600"></i> 레이어 옵션
+                        </h4>
+
+                        <!-- View Mode Selector -->
+                        <div class="mb-4">
+                            <label class="block text-xs font-bold text-slate-500 mb-1">👀 지도 채색 기준</label>
+                            <select id="view-mode-select" onchange="changeViewMode(this.value)"
+                                class="w-full text-xs border border-slate-200 rounded px-2 py-1.5 text-slate-700 focus:outline-none focus:border-blue-500">
+                                <option value="total">🏅 종합 안심 등급</option>
+                                <option value="security">👮 치안/안전 등급</option>
+                                <option value="building">🏢 물건/건물 등급</option>
+                                <option value="comfort">🌿 주거 쾌적성 등급</option>
+                                <option value="infra">🏪 생활 인프라 등급</option>
+                                <option value="traffic">🚇 교통 접근성 등급</option>
+                                <option value="env">🔊 환경/소음 등급</option>
+                            </select>
+                        </div>
+
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-full bg-green-500/50 border border-green-500"></span>
+                                <span class="text-sm font-medium text-gray-700">안심 구역 (분석)</span>
+                            </div>
+                            <button id="btn-toggle-polygon" onclick="toggleLayer('polygon')"
+                                class="w-11 h-6 bg-blue-600 rounded-full relative transition-colors focus:outline-none">
+                                <span
+                                    class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform translate-x-5"></span>
+                            </button>
+                        </div>
+
+                        <!-- Special Zones Toggle Section -->
+                        <div class="mb-3 pt-3 border-t border-slate-50">
+                            <h4 class="text-xs font-bold text-slate-500 mb-2">특수 정보</h4>
+                            <div class="space-y-2">
+                                <label class="flex items-center justify-between cursor-pointer group">
+                                    <div class="flex items-center gap-2">
+                                        <i class="fa-solid fa-volume-high text-red-500 text-xs"></i>
+                                        <span class="text-sm text-slate-600 group-hover:text-slate-800">소음/유해 구역</span>
+                                    </div>
+                                    <input type="checkbox" onchange="toggleSpecialLayer('noise', this.checked)"
+                                        class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 border-gray-300">
+                                </label>
+                                <label class="flex items-center justify-between cursor-pointer group">
+                                    <div class="flex items-center gap-2">
+                                        <i class="fa-solid fa-graduation-cap text-purple-500 text-xs"></i>
+                                        <span class="text-sm text-slate-600 group-hover:text-slate-800">학원가/상권</span>
+                                    </div>
+                                    <input type="checkbox" onchange="toggleSpecialLayer('academy', this.checked)"
+                                        class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 border-gray-300">
+                                </label>
+                                <label class="flex items-center justify-between cursor-pointer group">
+                                    <div class="flex items-center gap-2">
+                                        <i class="fa-solid fa-mountain text-amber-800 text-xs"></i>
+                                        <span class="text-sm text-slate-600 group-hover:text-slate-800">지형/경사도</span>
+                                    </div>
+                                    <input type="checkbox" onchange="toggleSpecialLayer('hill', this.checked)"
+                                        class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 border-gray-300">
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-sm bg-blue-600 flex items-center justify-center">
+                                    <i class="fa-solid fa-won-sign text-[8px] text-white"></i>
+                                </span>
+                                <span class="text-sm font-medium text-gray-700">시세 보기 (실거래)</span>
+                            </div>
+                            <button id="btn-toggle-marker" onclick="toggleLayer('marker')"
+                                class="w-11 h-6 bg-blue-600 rounded-full relative transition-colors focus:outline-none">
+                                <span
+                                    class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform translate-x-5"></span>
+                            </button>
+                        </div>
+
+                        <div class="mb-4">
+                            <h4 class="text-xs font-bold text-slate-500 mb-2">안심 등급 (분석)</h4>
+                            <div class="flex gap-2">
+                                <button id="btn-grade-A" onclick="toggleGradeLayer('A')"
+                                    class="flex-1 py-1 text-[10px] font-bold text-white bg-green-500 rounded shadow-sm hover:opacity-80 transition-opacity">
+                                    Grade A
+                                </button>
+                                <button id="btn-grade-B" onclick="toggleGradeLayer('B')"
+                                    class="flex-1 py-1 text-[10px] font-bold text-white bg-yellow-500 rounded shadow-sm hover:opacity-80 transition-opacity">
+                                    Grade B
+                                </button>
+                                <button id="btn-grade-C" onclick="toggleGradeLayer('C')"
+                                    class="flex-1 py-1 text-[10px] font-bold text-white bg-orange-500 rounded shadow-sm hover:opacity-80 transition-opacity">
+                                    Grade C
+                                </button>
+                                <button id="btn-grade-D" onclick="toggleGradeLayer('D')"
+                                    class="flex-1 py-1 text-[10px] font-bold text-white bg-red-500 rounded shadow-sm hover:opacity-80 transition-opacity">
+                                    Grade D
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-full bg-purple-600 flex items-center justify-center">
+                                    <i class="fa-solid fa-star text-[6px] text-white"></i>
+                                </span>
+                                <span
+                                    class="text-sm font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">찐
+                                    후기 (입주민)</span>
+                            </div>
+                            <button id="btn-toggle-review" onclick="toggleLayer('review')"
+                                class="w-11 h-6 bg-gray-200 rounded-full relative transition-colors focus:outline-none">
+                                <span
+                                    class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform"></span>
+                            </button>
+                        </div>
+
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-full bg-blue-500 flex items-center justify-center">
+                                    <i class="fa-solid fa-video text-[6px] text-white"></i>
+                                </span>
+                                <span class="text-sm font-medium text-gray-700">안심 CCTV (방범용)</span>
+                            </div>
+                            <button id="btn-toggle-cctv" onclick="toggleLayer('cctv')"
+                                class="w-11 h-6 bg-gray-200 rounded-full relative transition-colors focus:outline-none">
+                                <span
+                                    class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform"></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="map-loader"
+                    class="hidden absolute inset-0 bg-white/50 z-50 flex items-center justify-center backdrop-blur-sm">
+                    <div class="bg-white p-4 rounded-xl shadow-xl flex flex-col items-center">
+                        <i class="fa-solid fa-circle-notch fa-spin text-2xl text-blue-600 mb-2"></i>
+                        <span class="text-xs font-bold text-slate-600">데이터 처리 중...</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Bottom Data Grid (Excel Style) -->
+            <section id="data-grid-panel"
+                class="hidden md:flex flex-col bg-white border-t border-gray-200 transition-all duration-300 z-30 shadow-[0_-5px_15px_rgba(0,0,0,0.05)] h-10">
+                <!-- Header Bar -->
+                <div class="flex items-center justify-between px-4 py-2 bg-gray-50 border-b border-gray-200">
+                    <h3 class="font-bold text-slate-700 text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-list-ul text-blue-600"></i>
+                        실거래 매물 리스트 (<span id="grid-count" class="text-blue-600">0</span>건)
+                    </h3>
+                    <button onclick="toggleGrid()"
+                        class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 text-gray-500 transition-colors">
+                        <i id="grid-toggle-icon" class="fa-solid fa-chevron-up text-sm"></i>
+                    </button>
+                </div>
+
+                <!-- Table Container -->
+                <div class="flex-1 overflow-auto relative">
+                    <table class="w-full text-left border-collapse">
+                        <thead
+                            class="sticky top-0 z-10 bg-gray-50 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 shadow-sm">
+                            <tr>
+                                <th class="px-4 py-3 w-16 text-center border-r border-gray-100">상태</th>
+                                <th class="px-4 py-3 border-r border-gray-100">건물명</th>
+                                <th class="px-4 py-3 w-20 text-center border-r border-gray-100">거래</th>
+                                <th class="px-4 py-3 text-right border-r border-gray-100">가격</th>
+                                <th class="px-4 py-3 text-right border-r border-gray-100">면적/층</th>
+                                <th class="px-4 py-3 text-right w-32">실거래일</th>
+                            </tr>
+                        </thead>
+                        <tbody id="data-grid-body" class="text-sm text-gray-700 divide-y divide-gray-100 bg-white">
+                            <!-- Rows Injected Here -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+
+
+    </main>
+
+    <!-- Global Footer -->
+    <footer class="bg-gray-900 border-t border-gray-800 text-gray-500 py-1.5 shrink-0 z-40 relative">
+        <div class="w-full px-4 flex justify-between items-center text-[10px] leading-none">
+            <span>&copy; 2026 Tenant Note.</span>
+            <div class="flex gap-3">
+                <a href="#" class="hover:text-gray-300 transition">이용약관</a>
+                <span class="text-gray-700">|</span>
+                <a href="#" class="hover:text-gray-300 transition">문의하기</a>
+            </div>
+        </div>
+    </footer>
+    <!-- Global Review Write Modal -->
+    <div id="review-modal"
+        class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[150] hidden flex items-end md:items-center justify-center">
+        <div class="bg-white w-full max-w-lg rounded-t-3xl md:rounded-3xl p-6 shadow-2xl animate-fade-in-up">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-slate-900">살아본 집의 찐후기를 들려주세요!</h3>
+                <button onclick="document.getElementById('review-modal').classList.add('hidden')"
+                    class="text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-xmark text-2xl"></i>
+                </button>
+            </div>
+
+            <div class="space-y-4">
+                <!-- 1. Address Search -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">어디에 사셨나요?</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-slate-400"></i>
+                        <input type="text" placeholder="도로명 주소나 건물명 검색"
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-sm font-bold outline-none focus:border-blue-500 transition-colors">
+                    </div>
+                </div>
+
+                <!-- 2. Period -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">거주 기간</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <select
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-blue-500">
+                            <option>2024년</option>
+                            <option>2023년</option>
+                            <option>2022년</option>
+                            <option>2021년 이전</option>
+                        </select>
+                        <select
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-blue-500">
+                            <option>1년 미만</option>
+                            <option>1년</option>
+                            <option>2년 이상</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 3. Rating -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">이 집의 총점은?</label>
+                    <div class="flex gap-2 justify-center py-4 bg-slate-50 rounded-xl border border-slate-200">
+                        <i class="fa-solid fa-star text-3xl text-gray-300 cursor-pointer hover:text-yellow-400"
+                            onclick="this.classList.toggle('text-yellow-400'); this.classList.toggle('text-gray-300')"></i>
+                        <i class="fa-solid fa-star text-3xl text-gray-300 cursor-pointer hover:text-yellow-400"
+                            onclick="this.classList.toggle('text-yellow-400'); this.classList.toggle('text-gray-300')"></i>
+                        <i class="fa-solid fa-star text-3xl text-gray-300 cursor-pointer hover:text-yellow-400"
+                            onclick="this.classList.toggle('text-yellow-400'); this.classList.toggle('text-gray-300')"></i>
+                        <i class="fa-solid fa-star text-3xl text-gray-300 cursor-pointer hover:text-yellow-400"
+                            onclick="this.classList.toggle('text-yellow-400'); this.classList.toggle('text-gray-300')"></i>
+                        <i class="fa-solid fa-star text-3xl text-gray-300 cursor-pointer hover:text-yellow-400"
+                            onclick="this.classList.toggle('text-yellow-400'); this.classList.toggle('text-gray-300')"></i>
+                    </div>
+                </div>
+
+                <!-- 4. Pros/Cons -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-blue-600 mb-1">장점</label>
+                        <textarea
+                            class="w-full h-24 bg-blue-50/50 border border-blue-100 rounded-xl p-3 text-sm resize-none outline-none focus:border-blue-500"
+                            placeholder="채광, 치안, 교통 등 만족스러운 점"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-red-500 mb-1">단점</label>
+                        <textarea
+                            class="w-full h-24 bg-red-50/50 border border-red-100 rounded-xl p-3 text-sm resize-none outline-none focus:border-red-500"
+                            placeholder="소음, 벌레, 곰팡이 등 아쉬운 점"></textarea>
+                    </div>
+                </div>
+
+                <button
+                    onclick="alert('소중한 후기 감사합니다! 500P가 적립되었습니다.'); document.getElementById('review-modal').classList.add('hidden')"
+                    class="w-full bg-slate-900 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-slate-800 transition-all transform hover:scale-[1.02]">
+                    등록하고 포인트 받기 💰
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- Map Legend Toggle -->
+    <button onclick="toggleLegend()"
+        class="fixed bottom-6 right-4 z-50 bg-white text-slate-700 p-3 rounded-full shadow-lg border border-slate-200 hover:bg-slate-50 transition-all focus:outline-none hover:scale-105 active:scale-95 group">
+        <i class="fa-solid fa-circle-question text-xl text-blue-600 group-hover:text-blue-700"></i>
+    </button>
+
+    <!-- Map Legend Panel -->
+    <div id="map-legend"
+        class="hidden fixed bottom-20 right-4 z-50 bg-white/90 backdrop-blur-md p-5 rounded-2xl shadow-2xl border border-white/50 w-72 animate-fade-in-up">
+        <div class="flex justify-between items-center mb-4 border-b border-slate-200/50 pb-3">
+            <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">지도 가이드</h4>
+            <button onclick="toggleLegend()" class="text-slate-400 hover:text-slate-600 transition-colors"><i
+                    class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <div class="mb-5">
+            <h5 class="text-xs font-bold text-slate-800 mb-2 flex items-center"><i
+                    class="fa-solid fa-shield-halved text-green-500 mr-2"></i>안심 주거 등급</h5>
+            <div class="grid grid-cols-2 gap-2">
+                <div
+                    class="flex items-center text-xs text-slate-600 bg-slate-50/50 p-1.5 rounded-lg border border-slate-100">
+                    <span class="w-2.5 h-2.5 rounded-full bg-green-500 mr-2 shadow-sm"></span> A (상위 15%)
+                </div>
+                <div
+                    class="flex items-center text-xs text-slate-600 bg-slate-50/50 p-1.5 rounded-lg border border-slate-100">
+                    <span class="w-2.5 h-2.5 rounded-full bg-yellow-400 mr-2 shadow-sm"></span> B (안심)
+                </div>
+                <div
+                    class="flex items-center text-xs text-slate-600 bg-slate-50/50 p-1.5 rounded-lg border border-slate-100">
+                    <span class="w-2.5 h-2.5 rounded-full bg-orange-400 mr-2 shadow-sm"></span> C (보통)
+                </div>
+                <div
+                    class="flex items-center text-xs text-slate-600 bg-slate-50/50 p-1.5 rounded-lg border border-slate-100">
+                    <span class="w-2.5 h-2.5 rounded-full bg-red-500 mr-2 shadow-sm"></span> D (주의)
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h5 class="text-xs font-bold text-slate-800 mb-2 flex items-center"><i
+                    class="fa-solid fa-map-pin text-blue-500 mr-2"></i>매물 유형 (마커)</h5>
+            <div class="space-y-2">
+                <div class="flex items-center text-xs text-slate-600 hover:bg-slate-50 p-1 rounded transition-colors">
+                    <span
+                        class="w-10 h-4 rounded px-1 text-[9px] text-white font-bold bg-[#3B82F6] mr-2 flex items-center justify-center shadow-sm">아파트</span>
+                    APT (아파트)
+                </div>
+                <div class="flex items-center text-xs text-slate-600 hover:bg-slate-50 p-1 rounded transition-colors">
+                    <span
+                        class="w-10 h-4 rounded px-1 text-[9px] text-white font-bold bg-[#8B5CF6] mr-2 flex items-center justify-center shadow-sm">오피</span>
+                    OP (오피스텔)
+                </div>
+                <div class="flex items-center text-xs text-slate-600 hover:bg-slate-50 p-1 rounded transition-colors">
+                    <span
+                        class="w-10 h-4 rounded px-1 text-[9px] text-white font-bold bg-[#F97316] mr-2 flex items-center justify-center shadow-sm">연립</span>
+                    YH (연립/다세대)
+                </div>
+                <div class="flex items-center text-xs text-slate-600 hover:bg-slate-50 p-1 rounded transition-colors">
+                    <span
+                        class="w-10 h-4 rounded px-1 text-[9px] text-white font-bold bg-[#22C55E] mr-2 flex items-center justify-center shadow-sm">단독</span>
+                    DD (단독/다가구)
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4 pt-3 border-t border-slate-200/50">
+            <h5 class="text-xs font-bold text-slate-800 mb-2 flex items-center"><i
+                    class="fa-solid fa-layer-group text-slate-500 mr-2"></i>특수 구역 (GIS)</h5>
+            <div class="space-y-1.5">
+                <div class="flex items-center text-xs text-slate-600"><span
+                        class="w-3 h-3 rounded-full bg-red-500/30 border border-red-500 mr-2"></span> 소음/유해 시설 인접</div>
+                <div class="flex items-center text-xs text-slate-600"><span
+                        class="w-3 h-3 rounded-full bg-purple-500/30 border border-purple-500 mr-2"></span> 주요 학원가/상권
+                </div>
+                <div class="flex items-center text-xs text-slate-600"><span
+                        class="w-3 h-3 rounded-full bg-amber-800/40 border border-amber-800 mr-2"></span> 급경사(언덕) 구간
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        // Mobile Menu Script (Moved from Header)
+        const btn = document.getElementById('mobile-menu-btn');
+        const menu = document.getElementById('mobile-menu');
+        if (btn && menu) {
+            btn.addEventListener('click', () => { menu.classList.toggle('hidden'); });
+        }
+    </script>
+
+    <script>
+        // --- 1. Data Generator ---
+        const SILLIM_CENTER = { lat: 37.4842, lng: 126.9296 };
+        const NAMES = {
+            'APT': ['푸르지오', '현대아파트', '신동아', '아이파크', '래미안', '자이'],
+            'OP': ['르네상스', '메트로', '더리치', '프라임', '노블레스', '스테이'],
+            'YH': ['행복빌', '대박빌라', '청운빌라', '햇살가득', '드림빌', '스위트'],
+            'DD': ['다모아', '해피룸', '드림타운', '수목원', '풀하우스', '스타빌']
+        };
+
+        // GeoJSON Data Definitions (Polygons)
+        const SeowonDongGeoJSON = {
+            "type": "Feature",
+            "properties": { "adm_cd": "11620xxx", "adm_nm": "서원동", "grade": "C", "is_target": false },
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [[
+                    [126.9250, 37.4850], [126.9300, 37.4850], [126.9310, 37.4830], [126.9280, 37.4820], [126.9250, 37.4850]
+                ]]
+            }
+        };
+
+        const SinwonDongGeoJSON = {
+            "type": "Feature",
+            "properties": { "adm_cd": "11620xxx", "adm_nm": "신원동", "grade": "B", "is_target": true }, // Target Zone
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [[
+                    [126.9280, 37.4820], [126.9310, 37.4830], [126.9320, 37.4810], [126.9290, 37.4800], [126.9280, 37.4820]
+                ]]
+            }
+        };
+
+        function generateMockCCTV(center, count) {
+            const data = [];
+            for (let i = 0; i < count; i++) {
+                let lat = center.lat + (Math.random() - 0.5) * 0.01;
+                let lng = center.lng + (Math.random() - 0.5) * 0.01;
+                data.push({
+                    id: `TN_CCTV_${i}`,
+                    lat: lat,
+                    lng: lng,
+                    source: Math.random() > 0.8 ? 'National' : 'Seoul',
+                    type: '방범용'
+                });
+            }
+            return data;
+        }
+
+        // Global GIS Zones
+        const mockNoiseZones = [
+            { center: { lat: 37.481, lng: 126.925 }, radius: 250, label: '대로변 소음 주의' },
+            { center: { lat: 37.485, lng: 126.921 }, radius: 150, label: '철도 소음 주의' },
+            { center: { lat: 37.488, lng: 126.932 }, radius: 300, label: '상업지구 소음' }
+        ];
+        const mockAcademyZones = [
+            { center: { lat: 37.495, lng: 127.061 }, radius: 500, type: '입시', label: '대치동 학원가' },
+            { center: { lat: 37.649, lng: 127.076 }, radius: 400, type: '어학', label: '중계동 은행사거리' }
+        ];
+        const mockHillZones = [
+            { center: { lat: 37.475, lng: 126.935 }, radius: 500, label: '관악산 등산로' },
+            { center: { lat: 37.485, lng: 126.915 }, radius: 400, label: '난곡 힐스테이' }
+        ];
+
+        function generateMockListings(count) {
+            const listings = [];
+            for (let i = 0; i < count; i++) {
+                // 1. Basic Info
+                const type = ['APT', 'OP', 'YH', 'DD'][Math.floor(Math.random() * 4)];
+
+                const name = (NAMES[type] ? NAMES[type][Math.floor(Math.random() * NAMES[type].length)] : '빌라') +
+                    " " + (Math.floor(Math.random() * 10) + 1) + "차";
+
+                const dealType = Math.random() > 0.8 ? 'jeonse' : 'monthly';
+                let floor = Math.floor(Math.random() * 15) + 1 + '층';
+
+                let price = { d: 0, r: 0 };
+                let size = 0;
+
+                // Size & Price Logic based on Type
+                if (type === 'DD') {
+                    // 단독/다가구: 원룸(5~10평) vs 주택(20평~)
+                    if (Math.random() > 0.6) size = Math.floor(Math.random() * 20) + 20;
+                    else size = Math.floor(Math.random() * 6) + 5;
+                } else if (type === 'YH') {
+                    size = Math.floor(Math.random() * 15) + 10;
+                } else if (type === 'OP') {
+                    size = Math.floor(Math.random() * 10) + 6;
+                } else {
+                    size = Math.floor(Math.random() * 30) + 20; // APT
+                }
+
+                // Price Logic (Simplified)
+                if (dealType === 'monthly') {
+                    price.d = Math.floor(Math.random() * 5000) + 500;
+                    price.r = Math.floor(Math.random() * 100) + 30;
+                } else {
+                    price.d = Math.floor(Math.random() * 30000) + 10000;
+                    price.r = 0;
+                }
+
+                // Heating Logic (Method & Fuel)
+                const heating = { method: '', fuel: '' };
+                const hRand = Math.random();
+
+                if (type === 'APT') {
+                    if (hRand < 0.4) {
+                        heating.method = '지역난방';
+                        heating.fuel = '열병합';
+                    } else if (hRand < 0.8) {
+                        heating.method = '개별난방';
+                        heating.fuel = '도시가스';
+                    } else {
+                        heating.method = '중앙난방';
+                        heating.fuel = Math.random() > 0.5 ? '도시가스' : '기름';
+                    }
+                } else if (type === 'OP') {
+                    if (hRand < 0.7) {
+                        heating.method = '개별난방';
+                        heating.fuel = '도시가스';
+                    } else {
+                        heating.method = '지역난방';
+                        heating.fuel = '열병합';
+                    }
+                } else {
+                    // YH, DD
+                    if (hRand < 0.95) {
+                        heating.method = '개별난방';
+                        heating.fuel = '도시가스';
+                    } else {
+                        heating.method = '개별난방';
+                        heating.fuel = Math.random() > 0.5 ? '기름' : 'LPG';
+                    }
+                }
+
+                // 2. Scores & GIS Attributes (Slope, Noise, Infra)
+                let slope = 0;
+                // APT tends to be flatter (0~10), others wider range (0~25)
+                if (type === 'APT') {
+                    slope = Math.floor(Math.random() * 10);
+                } else {
+                    // 0~25 degrees
+                    if (Math.random() < 0.3) slope = Math.floor(Math.random() * 5); // Flat
+                    else if (Math.random() < 0.8) slope = Math.floor(Math.random() * 10) + 5; // Mild
+                    else slope = Math.floor(Math.random() * 11) + 15; // Steep (15~25)
+                }
+
+                const noiseLevel = Math.floor(Math.random() * 41) + 40; // 40~80 dB
+                const infraScore = Math.floor(Math.random() * 101); // 0~100
+
+                const baseComfort = Math.floor(Math.random() * 40) + 60;
+                // Comfort Score Penalty: if slope >= 10, -3 per degree
+                let comfortPenalty = (slope >= 10) ? (slope * 3) : (slope * 2);
+                const comfortScore = Math.max(10, baseComfort - comfortPenalty);
+
+                // Environment Penalty: if noise >= 65, -20
+                let envScore = Math.floor(Math.random() * 100);
+                if (noiseLevel >= 65) envScore = Math.max(10, envScore - 20);
+
+                const scores = {
+                    traffic: Math.floor(Math.random() * 100),
+                    living_infra: infraScore,
+                    property_building: Math.floor(Math.random() * 60) + 40,
+                    security_safety: Math.floor(Math.random() * 60) + 40,
+                    living_comfort: Math.floor(comfortScore),
+                    environment: envScore
+                };
+
+                const weightedScore =
+                    (scores.traffic * 0.25) +
+                    (scores.property_building * 0.25) +
+                    (scores.living_infra * 0.15) +
+                    (scores.security_safety * 0.15) +
+                    (scores.living_comfort * 0.15) +
+                    (scores.environment * 0.05);
+
+                let grade = 'C';
+                if (weightedScore >= 85) grade = 'A';
+                else if (weightedScore >= 55) grade = 'B';
+                else if (weightedScore >= 20) grade = 'C';
+                else grade = 'D';
+
+                // Feature Badges
+                const features = [];
+                if (slope < 5) features.push("🟢 완전 평지");
+                if (slope > 15) features.push("🔴 등산 코스");
+                if (noiseLevel > 70) features.push("🔊 소음 주의");
+                if (infraScore > 80) features.push("🧺 슬세권");
+
+                // Generate SWOT Data
+                const swot = generateSWOT({ scores, type, slope, price, noiseLevel, grade });
+
+                // Adjust lat/lng slightly around center
+                let lat = SILLIM_CENTER.lat + (Math.random() - 0.5) * 0.008;
+                let lng = SILLIM_CENTER.lng + (Math.random() - 0.5) * 0.008;
+
+                listings.push({
+                    id: `L${i}`,
+                    name: name,
+                    lat: lat, lng: lng,
+                    type: type, size: size, dealType: dealType, price: price, floor: floor,
+                    zone: 'Safe', scores: scores, grade: grade, slope: slope,
+                    noiseLevel: noiseLevel, infraScore: infraScore,
+                    heating: heating, features: features, swot: swot,
+                    reviewCount: Math.floor(Math.random() * 20),
+                    rating: (Math.random() * 2 + 3).toFixed(1),
+                    pros: "교통 편리, 마트 인접"
+                });
+            }
+            return listings;
+        }
+
+        const Listings = generateMockListings(100);
+        const MockCCTV = generateMockCCTV(SILLIM_CENTER, 50);
+        // Type Names Mapping (MOLIT Standard)
+        const TypeNames = { 'APT': '아파트', 'OP': '오피스텔', 'YH': '연립/다세대', 'DD': '단독/다가구' };
+
+        const TypeColors = {
+            'APT': '#3B82F6', // Blue
+            'OP': '#8B5CF6',  // Purple
+            'YH': '#F97316',  // Orange
+            'DD': '#22C55E'   // Green
+        };
+
+        // --- 2. Map & State ---
+        let map;
+        let mapObjects = { zones: [], markers: [], cctv: [], overlays: [] };
+        let seoulData = null; // Global variable for loaded GeoJSON
+        let filterState = {
+            types: new Set(['APT', 'OP', 'YH', 'DD']),
+            size: 'all',
+            dealType: 'monthly',
+            grades: new Set(['A', 'B', 'C', 'D']),
+            budget: { depMin: 0, depMax: 999999, rentMin: 0, rentMax: 999999 }
+        };
+
+        // New layer visibility state
+        let isPolygonVisible = true; // Kept for compatibility if needed, but grades set controls visibility now
+        let isMarkerVisible = true;
+        let isReviewVisible = false; // Toggle state
+        let isCctvVisible = false;
+
+        let filteredData = [];
+        let visibleCount = 20;
+
+        let currentViewMode = 'total';
+        let isPyeong = true; // Unit State
+        let chartInstance = null; // Chart instance
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initMap();
+            // Initial List Render
+            renderInitialList();
+        });
+
+        // --- Functions ---
+        function generateSWOT(item) {
+            const s = [], w = [], o = [], t = [];
+
+            // Strengths (Scores > 80)
+            if (item.scores.traffic > 80) s.push("지하철역 도보 5분 초역세권");
+            if (item.scores.living_comfort > 80) s.push("숲세권/팍세권 쾌적함");
+            if (item.scores.living_infra > 80) s.push("대형마트/백화점 슬세권");
+            if (item.type === 'YH' && item.price.d < 20000) s.push("서울에서 보기 드문 가성비");
+            if (item.slope < 5) s.push("평지라 이동이 편리해요");
+
+            // Weaknesses (Scores < 50)
+            if (item.scores.traffic < 50) w.push("지하철역까지 마을버스 필요");
+            if (item.scores.property_building < 50) w.push("건물 노후화로 주차 난항 예상");
+            if (item.slope > 10) w.push("매일 운동되는 오르막길");
+            if (item.noiseLevel > 65) w.push("주변 소음으로 창문 열기 부담");
+
+            // Opportunities (External Factors)
+            if (item.type === 'YH' || item.type === 'DD') {
+                o.push("모아타운/신속통합기획 후보지 가능성");
+                o.push("경전철 서부선 개통 호재");
+            } else {
+                o.push("주변 상권 리모델링 활발");
+            }
+            if (item.grade === 'C' || item.grade === 'D') o.push("저평가 지역으로 시세 상승 여력");
+
+            // Threats (External Risks)
+            if (item.scores.traffic > 90) t.push("임대차 갱신 시 보증금 인상 유력");
+            else t.push("인근 공사로 당분간 소음 예상");
+            if (item.scores.security_safety < 60) t.push("밤길 귀가 시 주의 필요");
+
+            // Fill empty slots if needed to ensure at least 1 item
+            if (s.length === 0) s.push("무난하고 조용한 주거 환경");
+            if (w.length === 0) w.push("특별한 단점이 없는 것이 장점");
+
+            return { s: s.slice(0, 2), w: w.slice(0, 2), o: o.slice(0, 2), t: t.slice(0, 2) };
+        }
+
+        // Helper: Calculate Grade based on View Mode
+        function getGrade(item, mode) {
+            let score = 0;
+            // Mode mapping
+            if (mode === 'total') {
+                // Approximate weighted score if not pre-calculated
+                if (item.grade === 'A') score = 90;
+                else if (item.grade === 'B') score = 70;
+                else if (item.grade === 'C') score = 40;
+                else score = 10;
+                // If polygon has explicit scores, use weighted average
+                if (item.scores) {
+                    score = (item.scores.traffic * 0.25) + (item.scores.property_building * 0.25) +
+                        (item.scores.living_infra * 0.15) + (item.scores.security_safety * 0.15) +
+                        (item.scores.living_comfort * 0.15) + (item.scores.environment * 0.05);
+                }
+            } else {
+                if (!item.scores) return 'C';
+                if (mode === 'security') score = item.scores.security_safety;
+                else if (mode === 'building') score = item.scores.property_building;
+                else if (mode === 'comfort') score = item.scores.living_comfort;
+                else if (mode === 'infra') score = item.scores.living_infra;
+                else if (mode === 'traffic') score = item.scores.traffic;
+                else if (mode === 'env') score = item.scores.environment;
+            }
+
+            if (score >= 85) return 'A';
+            if (score >= 55) return 'B';
+            if (score >= 20) return 'C';
+            return 'D';
+        }
+
+        function getRegionColor(grade) {
+            if (grade === 'A') return '#22c55e'; // Green
+            if (grade === 'B') return '#eab308'; // Yellow
+            if (grade === 'C') return '#f97316'; // Orange
+            return '#ef4444'; // Red
+        }
+
+        function renderSpecialLayers() {
+            // 1. Noise Zones (Red)
+            mockNoiseZones.forEach(zone => {
+                const circle = new kakao.maps.Circle({
+                    center: new kakao.maps.LatLng(zone.center.lat, zone.center.lng),
+                    radius: zone.radius,
+                    strokeWeight: 0,
+                    fillColor: '#FF0000',
+                    fillOpacity: 0.3
+                });
+                circle.setMap(null); // Default Off
+                circle.customType = 'noise'; // Add Type Identifier
+                mapObjects.overlays.push(circle);
+
+                const label = new kakao.maps.CustomOverlay({
+                    position: new kakao.maps.LatLng(zone.center.lat, zone.center.lng),
+                    content: `<div class="bg-red-500 text-white text-[10px] px-2 py-1 round-full shadow-md font-bold flex items-center gap-1 opacity-90" style="border-radius: 9999px;">
+                                <i class="fa-solid fa-volume-high"></i> ${zone.label}
+                              </div>`,
+                    yAnchor: 1.5
+                });
+                label.setMap(null); // Default Off
+                label.customType = 'noise';
+                mapObjects.overlays.push(label);
+            });
+
+            // 2. Academy Zones (Purple)
+            mockAcademyZones.forEach(zone => {
+                const circle = new kakao.maps.Circle({
+                    center: new kakao.maps.LatLng(zone.center.lat, zone.center.lng),
+                    radius: zone.radius,
+                    strokeWeight: 0,
+                    fillColor: '#8B5CF6',
+                    fillOpacity: 0.3
+                });
+                circle.setMap(null); // Default Off
+                circle.customType = 'academy';
+                mapObjects.overlays.push(circle);
+
+                const label = new kakao.maps.CustomOverlay({
+                    position: new kakao.maps.LatLng(zone.center.lat, zone.center.lng),
+                    content: `<div class="bg-purple-600 text-white text-[10px] px-2 py-1 round-full shadow-md font-bold flex items-center gap-1 opacity-90" style="border-radius: 9999px;">
+                                <i class="fa-solid fa-graduation-cap"></i> ${zone.label}
+                              </div>`,
+                    yAnchor: 1.5
+                });
+                label.setMap(null); // Default Off
+                label.customType = 'academy';
+                mapObjects.overlays.push(label);
+            });
+
+            // 3. Hill Zones (Brown)
+            mockHillZones.forEach(zone => {
+                const circle = new kakao.maps.Circle({
+                    center: new kakao.maps.LatLng(zone.center.lat, zone.center.lng),
+                    radius: zone.radius,
+                    strokeWeight: 0,
+                    fillColor: '#78350F',
+                    fillOpacity: 0.4
+                });
+                circle.setMap(null); // Default Off
+                circle.customType = 'hill';
+                mapObjects.overlays.push(circle);
+
+                const label = new kakao.maps.CustomOverlay({
+                    position: new kakao.maps.LatLng(zone.center.lat, zone.center.lng),
+                    content: `<div class="bg-amber-800 text-white text-[10px] px-2 py-1 round-full shadow-md font-bold flex items-center gap-1 opacity-90" style="border-radius: 9999px;">
+                                <i class="fa-solid fa-mountain"></i> ${zone.label}
+                              </div>`,
+                    yAnchor: 1.5
+                });
+                label.setMap(null); // Default Off
+                label.customType = 'hill';
+                mapObjects.overlays.push(label);
+            });
+        }
+
+        function toggleSpecialLayer(type, isVisible) {
+            mapObjects.overlays.forEach(overlay => {
+                if (overlay.customType === type) {
+                    overlay.setMap(isVisible ? map : null);
+                }
+            });
+        }
+
+        function renderInitialList() {
+            const listContainer = document.getElementById('sidebar-content');
+            // Inject Layout
+            listContainer.innerHTML = `
+                <div class="flex items-center justify-between mb-3 px-1 sticky top-0 bg-slate-50 z-10 py-1">
+                    <span class="text-xs font-bold text-slate-500">검색 결과 <span id="result-count" class="text-blue-600">0</span>건</span>
+                    <button onclick="resetFilters()" class="text-xs text-slate-400 underline hover:text-slate-600">초기화</button>
+                </div>
+                
+                <!-- Top 3 Recommendation (Dynamic) -->
+                <div id="top-recommendation" class="hidden mb-4 bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-100 rounded-xl p-4">
+                     <h3 class="text-sm font-bold text-indigo-800 mb-3 flex items-center">
+                        <i class="fa-solid fa-crown text-yellow-500 mr-2"></i>
+                        <span id="top-title">000님</span>이 선호하는 동네 TOP 3
+                     </h3>
+                     <div id="top-list" class="space-y-2"></div>
+                </div>
+
+                <div id="result-list" class="space-y-3 pb-8"></div>
+                <div id="loading-indicator" class="hidden text-center py-4 text-xs text-slate-400">
+                    <i class="fa-solid fa-spinner fa-spin mr-1"></i> 더 불러오는 중...
+                </div>
+             `;
+        }
+
+        function initMap() {
+            const container = document.getElementById('map');
+            const options = { center: new kakao.maps.LatLng(SILLIM_CENTER.lat, SILLIM_CENTER.lng), level: 4 };
+            map = new kakao.maps.Map(container, options);
+
+            // --- Robust Data Load (No Fetch) ---
+            kakao.maps.load(() => {
+                console.log("[Init] Loading Mock Data directly...");
+
+                // DIRECT ASSIGNMENT
+                seoulData = {
+                    "type": "FeatureCollection",
+                    "features": [SeowonDongGeoJSON, SinwonDongGeoJSON]
+                };
+
+                // Inject Mock Scores into Polygon Features for Coloring
+                seoulData.features.forEach(f => {
+                    if (!f.properties.scores) {
+                        // Generate random scores consistent with existing mock data logic
+                        f.properties.scores = {
+                            traffic: Math.floor(Math.random() * 40) + 60,
+                            living_infra: Math.floor(Math.random() * 40) + 60,
+                            property_building: Math.floor(Math.random() * 40) + 60,
+                            security_safety: Math.floor(Math.random() * 40) + 60,
+                            living_comfort: Math.floor(Math.random() * 40) + 60,
+                            environment: Math.floor(Math.random() * 40) + 60
+                        };
+                    }
+                });
+
+                // Personalization Check
+                const params = new URLSearchParams(window.location.search);
+                const personaId = params.get('persona') || params.get('type') || params.get('preset');
+
+                if (personaId && typeof applyPersonalization === 'function') {
+                    applyPersonalization(seoulData, personaId);
+                }
+
+                // Draw Polygon Immediately
+                drawPolygons(seoulData);
+
+                // Hide Map Loader
+                const loader = document.getElementById('map-loader');
+                if (loader) loader.classList.add('hidden');
+
+                // Render Special Zones
+                renderSpecialLayers();
+            });
+
+            if (typeof applyFilter === 'function') applyFilter();
+            if (typeof updateLayerToggles === 'function') updateLayerToggles();
+
+            // Zoom Event for Detail Data
+            kakao.maps.event.addListener(map, 'zoom_changed', () => {
+                const level = map.getLevel();
+                if (typeof toggleDetailLayers === 'function') toggleDetailLayers(level);
+            });
+        }
+
+        function toggleDetailLayers(level) {
+            // Level 1,2,3 -> Show Detail (CCTV)
+            if (level <= 3) {
+                if (mapObjects.cctv.length === 0 && seoulData) {
+                    renderDetailMarkers();
+                } else {
+                    showCCTVMarkers(true);
+                }
+            } else {
+                showCCTVMarkers(false);
+            }
+        }
+
+        function renderDetailMarkers() {
+            if (!seoulData) return;
+
+            seoulData.features.forEach(feature => {
+                const props = feature.properties;
+                // Only render if target and has detail data
+                if (props.is_target && props.detail_data && props.detail_data.cctv) {
+                    props.detail_data.cctv.forEach(coord => {
+                        // coord is [lng, lat]
+                        const position = new kakao.maps.LatLng(coord[1], coord[0]);
+
+                        // Create Custom Overlay for better aesthetics
+                        const content = document.createElement('div');
+                        content.className = 'cctv-marker';
+                        content.innerHTML = '<i class="fa-solid fa-video text-white text-xs"></i>';
+
+                        const overlay = new kakao.maps.CustomOverlay({
+                            position: position,
+                            content: content,
+                            yAnchor: 1
+                        });
+
+                        overlay.setMap(map);
+                        mapObjects.cctv.push(overlay);
+                    });
+                }
+            });
+        }
+
+        function showCCTVMarkers(visible) {
+            mapObjects.cctv.forEach(overlay => {
+                overlay.setMap(visible ? map : null);
+            });
+        }
+
+        // Async Data Fetching
+        async function fetchSeoulData() {
+            try {
+                const response = await fetch('data/seoul_hybrid_data.json');
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const data = await response.json();
+                console.log("Seoul Hybrid Data Loaded:", data);
+                return data;
+            } catch (error) {
+                console.warn("Failed to load Seoul data. Rendering empty map.", error);
+                // Return minimal empty struct or null to avoid crash
+                return null;
+            }
+        }
+
+        function drawPolygons(geoJSON) {
+            if (!geoJSON || !geoJSON.features) return;
+
+            geoJSON.features.forEach(feature => {
+                const props = feature.properties;
+                const coords = feature.geometry.coordinates[0]; // Assuming Polygon type, taking first ring
+
+                // Convert GeoJSON [lng, lat] to Kakao LatLng
+                const path = coords.map(c => new kakao.maps.LatLng(c[1], c[0]));
+
+                // New Logic: determine grade dynamically based on view mode
+                const dynamicGrade = getGrade(props, currentViewMode);
+                let fillColor = getRegionColor(dynamicGrade);
+
+                // Target Zone Styling
+                let strokeColor = fillColor;
+                let strokeWeight = 1; // Default lightweight
+                let setOpacity = 0.4; // Default 0.4 for better visibility of color
+
+                if (props.is_target) {
+                    strokeWeight = 3;
+                    strokeColor = '#1e3a8a'; // Dark Blue (blue-900) for emphasis
+                    setOpacity = 0.6; // Slightly more visible
+                }
+
+                const polygon = new kakao.maps.Polygon({
+                    path: path,
+                    strokeWeight: strokeWeight,
+                    strokeColor: strokeColor,
+                    strokeOpacity: 1,
+                    fillOpacity: setOpacity,
+                    fillColor: fillColor,
+                    zIndex: props.is_target ? 10 : 1
+                });
+
+                // Store grade for filtering/reference
+                polygon.customData = { grade: dynamicGrade };
+
+                polygon.setMap(map);
+
+                // Events
+                kakao.maps.event.addListener(polygon, 'mouseover', () => polygon.setOptions({ fillOpacity: 0.7 }));
+                kakao.maps.event.addListener(polygon, 'mouseout', () => polygon.setOptions({ fillOpacity: setOpacity }));
+                kakao.maps.event.addListener(polygon, 'click', () => {
+                    if (props.is_target) {
+                        props.scores = {
+                            security_safety: 90, property_building: 85, living_comfort: 80,
+                            living_infra: 95, traffic: 70, environment: 60
+                        };
+                        showZoneDetail(props);
+                    } else {
+                        showToast("🚧 상세 분석 준비 중인 지역입니다. (안심 등급만 제공)");
+                    }
+                });
+
+                mapObjects.zones.push(polygon);
+            });
+        }
+
+        function changeViewMode(mode) {
+            currentViewMode = mode;
+            // Clear existing polygons
+            mapObjects.zones.forEach(z => z.setMap(null));
+            mapObjects.zones = [];
+            // Redraw with new mode
+            drawPolygons(seoulData);
+            // Re-apply filter to update list items if needed (though list items filter by grade, which might be confusing if grade definition changes. For now let's keep list filters independent or aligned. 
+            // The request says "Filter Linkage: A-D grade filter should work with the category". 
+            // So we should re-apply filter because getGrade is used there? Wait, listings have their own scores. 
+            // Let's ensure list filtering also respects the mode if desired, but request emphasized "Polygon Coloring". 
+            // However, "Filter Linkage" implies if I select "Traffic" and "Grade A", I expect to see Traffic Grade A items.
+            applyFilter();
+        }
+
+        // --- 3. Filter Logic ---
+        function setDealType(type) {
+            filterState.dealType = type;
+            document.querySelectorAll('.deal-toggle-btn').forEach(b => b.classList.remove('active', 'bg-white', 'text-blue-600', 'shadow-sm'));
+            document.getElementById(`deal-${type}`).classList.add('active', 'bg-white', 'text-blue-600', 'shadow-sm');
+            applyFilter();
+        }
+
+        function toggleType(type) {
+            if (filterState.types.has(type)) { if (filterState.types.size > 1) filterState.types.delete(type); }
+            else filterState.types.add(type);
+
+            document.querySelectorAll('.filter-type-btn').forEach(btn => {
+                const t = btn.dataset.type;
+                if (filterState.types.has(t)) {
+                    btn.classList.add('active', 'bg-blue-600', 'text-white', 'border-blue-600');
+                    btn.classList.remove('bg-gray-50', 'text-slate-500', 'border-slate-200');
+                } else {
+                    btn.classList.remove('active', 'bg-blue-600', 'text-white', 'border-blue-600');
+                    btn.classList.add('bg-gray-50', 'text-slate-500', 'border-slate-200');
+                }
+            });
+            applyFilter();
+        }
+
+        function setSize(size) {
+            filterState.size = size;
+            document.querySelectorAll('.filter-size-btn').forEach(btn => {
+                btn.classList.remove('active', 'bg-blue-50', 'text-blue-600', 'border-blue-600');
+                btn.classList.add('text-slate-500', 'border-slate-200');
+                if (btn.dataset.size === size) {
+                    btn.classList.add('active', 'bg-blue-50', 'text-blue-600', 'border-blue-600');
+                    btn.classList.remove('text-slate-500', 'border-slate-200');
+                }
+            });
+            applyFilter();
+        }
+
+        // Bridge to new helper
+        function formatPrice(price) {
+            return formatMoney(price.d, price.r);
+        }
+
+        // Helper: Format Money (Eok/Man)
+        function formatMoney(d, r) {
+            let dStr = '';
+            if (d >= 10000) {
+                const eok = Math.floor(d / 10000);
+                const man = d % 10000;
+                dStr = `${eok}${man > 0 ? '.' + (man / 1000).toFixed(0) : ''}억`;
+            } else if (d > 0) {
+                dStr = `${d.toLocaleString()}만`;
+            } else {
+                dStr = '0';
+            }
+
+            if (r > 0) return `${dStr} / ${r}만`; // Monthly
+            return dStr; // Jeonse
+        }
+
+        // Helper: Format Area
+        function formatArea(sizePyeong) {
+            if (isPyeong) return `${sizePyeong}평`;
+            const m2 = (sizePyeong * 3.3058).toFixed(1); // 1 Pyeong approx 3.3058 m2
+            return `${m2}㎡`;
+        }
+
+        function toggleUnit() {
+            isPyeong = !isPyeong;
+            // Update Toggle UI
+            const pyEl = document.getElementById('unit-pyeong');
+            const m2El = document.getElementById('unit-m2');
+            if (isPyeong) {
+                pyEl.className = 'text-blue-600';
+                m2El.className = 'text-slate-400';
+            } else {
+                pyEl.className = 'text-slate-400';
+                m2El.className = 'text-blue-600';
+            }
+            // Re-render markers with new unit
+            renderMarkers(filteredData);
+        }
+
+        function applyFilter() {
+            document.getElementById('map-loader').classList.remove('hidden');
+
+            setTimeout(() => {
+                // 1. Filter Data
+                filteredData = Listings.filter(item => {
+                    if (!filterState.types.has(item.type)) return false;
+                    if (item.dealType !== filterState.dealType) return false;
+                    const s = item.size;
+                    if (filterState.size === 'under10' && s >= 10) return false;
+                    if (filterState.size === '10to20' && (s < 10 || s >= 20)) return false;
+                    if (filterState.size === 'over30' && s < 30) return false;
+
+                    // Grade Filter (Dynamic based on View Mode)
+                    const itemGrade = getGrade(item, currentViewMode);
+                    if (!filterState.grades.has(itemGrade)) return false;
+
+                    // Budget Check
+                    const d = item.price.d; // Deposit
+                    const r = item.price.r; // Rent
+                    const b = filterState.budget;
+
+                    // Update budget state from inputs before filter (Sync)
+                    const depMinInput = document.getElementById('budget-dep-min');
+                    const depMaxInput = document.getElementById('budget-dep-max');
+                    const rentMinInput = document.getElementById('budget-rent-min');
+                    const rentMaxInput = document.getElementById('budget-rent-max');
+
+                    if (depMinInput) b.depMin = parseInt(depMinInput.value) || 0;
+                    if (depMaxInput) b.depMax = parseInt(depMaxInput.value) || 999999;
+                    if (rentMinInput) b.rentMin = parseInt(rentMinInput.value) || 0;
+                    if (rentMaxInput) b.rentMax = parseInt(rentMaxInput.value) || 999999;
+
+                    if (d < b.depMin || d > b.depMax) return false;
+                    if (r < b.rentMin || r > b.rentMax) return false;
+
+                    return true;
+                });
+
+                document.getElementById('result-count').innerText = filteredData.length;
+
+                // 2. Clear Markers
+                mapObjects.markers.forEach(m => m.setMap(null));
+                mapObjects.markers = [];
+
+                // 3. Render Markers (New Grouped Logic)
+                if (isMarkerVisible) {
+                    renderMarkers(filteredData);
+                }
+
+                // 4. Render List
+                visibleCount = 20;
+                renderList();
+                renderDataGrid(); // Sync Data Grid
+
+                document.getElementById('map-loader').classList.add('hidden');
+            }, 50);
+        }
+
+        function renderMarkers(items) {
+            // Group by Coordinates (Lat,Lng Key)
+            const groups = {};
+            items.forEach(item => {
+                const key = `${item.lat},${item.lng}`;
+                if (!groups[key]) groups[key] = [];
+                groups[key].push(item);
+            });
+
+            // Iterate Groups to create Markers
+            Object.values(groups).forEach(group => {
+                const item = group[0]; // Representative Item
+                const count = group.length;
+
+                // Review Mode Logic
+                if (isReviewVisible) {
+                    if (item.reviewCount === 0) return;
+                    // Grouping not applied to review markers in this request, but let's keep it simple (1 dot per location)
+                    // If existing logic for review was per-item, grouping might hide separate reviews. 
+                    // But strictly, stacking applies to "Markers". 
+                    // Let's assume Review Mode also benefits from stacking or just render as is?
+                    // Request focused on "Marker Design Improvement" (Price/Area). 
+                    // Review markers are different. Let's keep Review Mode simple for now (per item) OR apply stacking if desired.
+                    // IMPORTANT: The request says "Marker Stacking... badge". This likely applies to the main Listing Markers.
+                    // I will apply stacking to standard markers. For Review markers, I'll stick to 1 representative or stack if needed. 
+                    // Let's stick to STACKING for both to prevent overlap chaos.
+
+                    const content = document.createElement('div');
+                    content.className = `listing-marker bg-purple-600 border-purple-600`;
+                    content.style.backgroundColor = '#9333ea';
+                    content.style.borderColor = '#9333ea';
+
+                    // Badge for Review Mode? Usually Review Mode shows "Score". 
+                    // Let's just show the top rated one? Or average? 
+                    // For safety, let's keep Review Mode logic separate and just iterate items IF we don't want stacking there.
+                    // But lat/lng duplication means they overlap anyway. Grouping is better.
+
+                    const style = document.createElement('style');
+                    style.innerHTML = `.listing-marker.bg-purple-600::after { border-top-color: #9333ea !important; }`;
+                    content.appendChild(style);
+                    content.innerHTML = `<span>★ ${item.rating} (${item.reviewCount})</span>`;
+                    // Badge
+                    if (count > 1) {
+                        const badge = document.createElement('span');
+                        badge.className = 'absolute -top-2 -right-2 bg-red-500 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full border border-white shadow-sm z-50';
+                        badge.innerText = `+${count - 1}`;
+                        content.appendChild(badge);
+                    }
+                    content.onclick = () => showDetail(item); // Show first
+
+                    const overlay = new kakao.maps.CustomOverlay({
+                        map: map, position: new kakao.maps.LatLng(item.lat, item.lng),
+                        content: content, yAnchor: 1, zIndex: 30
+                    });
+                    mapObjects.markers.push(overlay);
+
+                } else {
+                    // Standard Marker (Price / Area)
+                    const markerColor = TypeColors[item.type] || '#3B82F6';
+
+                    const content = document.createElement('div');
+                    content.className = 'relative group cursor-pointer transition-transform hover:z-50 hover:scale-105';
+
+                    // Main Box
+                    const box = document.createElement('div');
+                    box.className = 'rounded-xl shadow-md border-2 border-white flex flex-col items-center justify-center overflow-hidden';
+                    box.style.backgroundColor = markerColor;
+                    box.style.minWidth = '70px';
+
+                    const priceText = formatMoney(item.price.d, item.price.r);
+                    const areaText = formatArea(item.size);
+
+                    box.innerHTML = `
+                        <div class="px-2 py-1 text-white text-xs font-bold leading-none bg-black/10 w-full text-center">
+                            ${priceText}
+                        </div>
+                        <div class="px-2 py-0.5 bg-white w-full text-center">
+                             <span class="text-[10px] font-bold text-slate-600">${areaText}</span>
+                        </div>
+                    `;
+
+                    // Stack Badge
+                    if (count > 1) {
+                        const badge = document.createElement('div');
+                        badge.className = 'absolute -top-2 -right-2 bg-red-600 text-white text-[9px] font-bold w-5 h-5 flex items-center justify-center rounded-full border border-white shadow-sm z-10';
+                        badge.innerText = `+${count - 1}`;
+                        content.appendChild(badge);
+                    }
+
+                    content.appendChild(box);
+                    content.onclick = () => showDetail(item);
+
+                    const overlay = new kakao.maps.CustomOverlay({
+                        map: map, position: new kakao.maps.LatLng(item.lat, item.lng),
+                        content: content, yAnchor: 1, zIndex: 20
+                    });
+                    mapObjects.markers.push(overlay);
+                }
+            });
+        }
+
+        function renderDataGrid() {
+            const tbody = document.getElementById('data-grid-body');
+            tbody.innerHTML = '';
+
+            // Show only first 50 for performance in grid for now
+            const items = filteredData.slice(0, 50);
+            document.getElementById('grid-count').innerText = filteredData.length;
+
+            items.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-blue-50 cursor-pointer transition-colors group";
+                tr.onclick = () => {
+                    map.panTo(new kakao.maps.LatLng(item.lat, item.lng));
+                    showDetail(item);
+                };
+
+                const priceText = formatPrice(item.price);
+                const gradeBadge = item.grade === 'A' || item.grade === 'B'
+                    ? `<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-[10px] font-bold">안심</span>`
+                    : `<span class="bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full text-[10px] font-bold">주의</span>`;
+
+                tr.innerHTML = `
+                    <td class="px-4 py-3 text-center align-middle border-r border-gray-50">${gradeBadge}</td>
+                    <td class="px-4 py-3 font-bold text-gray-900 group-hover:text-blue-600 transition-colors truncate max-w-[150px] border-r border-gray-50">${item.name}</td>
+                    <td class="px-4 py-3 text-center text-xs font-medium text-gray-500 bg-gray-50/50 border-r border-gray-50">${TypeNames[item.type]}</td>
+                    <td class="px-4 py-3 text-right font-mono font-medium text-blue-600 border-r border-gray-50">${priceText}</td>
+                    <td class="px-4 py-3 text-right text-xs text-gray-500 border-r border-gray-50">${item.size}평 <span class="text-gray-300">|</span> ${item.floor}</td>
+                    <td class="px-4 py-3 text-right text-xs text-gray-400 font-mono">2024.01.12</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            if (filteredData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-8 text-center text-gray-400 text-xs">데이터가 없습니다.</td></tr>`;
+            }
+        }
+
+        let isGridExpanded = false;
+        function toggleGrid() {
+            const panel = document.getElementById('data-grid-panel');
+            const icon = document.getElementById('grid-toggle-icon');
+            if (isGridExpanded) {
+                // Collapse to header height
+                panel.style.height = '40px';
+                panel.classList.add('h-10'); // Ensure class sync if needed, though style overrides
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-up');
+            } else {
+                panel.style.height = '300px';
+                panel.classList.remove('h-10');
+                icon.classList.remove('fa-chevron-up');
+                icon.classList.add('fa-chevron-down');
+            }
+            isGridExpanded = !isGridExpanded;
+        }
+
+        function toggleLayerPanel() {
+            const panel = document.getElementById('layer-options-panel');
+            panel.classList.toggle('hidden');
+        }
+
+        function renderList() {
+            const listContainer = document.getElementById('result-list');
+            const itemsToShow = filteredData.slice(0, visibleCount);
+            listContainer.innerHTML = ''; // Clear current list
+
+            if (itemsToShow.length === 0) {
+                listContainer.innerHTML = `<div class="p-8 text-center text-slate-400 text-sm">조건에 맞는 검색 결과가 없습니다.</div>`;
+                return;
+            }
+
+            itemsToShow.forEach(item => {
+                const priceText = formatPrice(item.price);
+                const card = document.createElement('div');
+                card.className = "bg-white p-4 rounded-xl border border-slate-100 shadow-sm hover:border-blue-400 cursor-pointer transition-all";
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-1">
+                        <span class="text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">${TypeNames[item.type]}</span>
+                        <span class="text-sm font-bold text-blue-600">${priceText}</span>
+                    </div>
+                    <h3 class="text-sm font-bold text-slate-900 truncate mb-1">${item.name}</h3>
+                    <p class="text-xs text-slate-500">${item.size}평 · ${item.floor}</p>
+                 `;
+                card.onclick = () => {
+                    map.panTo(new kakao.maps.LatLng(item.lat, item.lng));
+                    showDetail(item);
+                    if (window.innerWidth < 768) toggleSidebar(false); // On mobile, stay on map logic differs, but here clicking listing should probably show detail.
+                };
+                listContainer.appendChild(card);
+            });
+
+            const loader = document.getElementById('loading-indicator');
+            if (filteredData.length > visibleCount) loader.classList.remove('hidden');
+            else loader.classList.add('hidden');
+        }
+
+        function handleScroll(target) {
+            if (target.scrollTop + target.clientHeight >= target.scrollHeight - 50) {
+                if (visibleCount < filteredData.length) {
+                    visibleCount += 20;
+                    appendListItems();
+                }
+            }
+        }
+
+        function appendListItems() {
+            const listContainer = document.getElementById('result-list');
+            const nextItems = filteredData.slice(visibleCount - 20, visibleCount);
+
+            nextItems.forEach(item => {
+                const priceText = formatPrice(item.price);
+                const card = document.createElement('div');
+                card.className = "bg-white p-4 rounded-xl border border-slate-100 shadow-sm hover:border-blue-400 cursor-pointer transition-all";
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-1">
+                        <span class="text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">${TypeNames[item.type]}</span>
+                        <span class="text-sm font-bold text-blue-600">${priceText}</span>
+                    </div>
+                    <h3 class="text-sm font-bold text-slate-900 truncate mb-1">${item.name}</h3>
+                    <p class="text-xs text-slate-500">${item.size}평 · ${item.floor}</p>
+                 `;
+                card.onclick = () => {
+                    map.panTo(new kakao.maps.LatLng(item.lat, item.lng));
+                    showDetail(item);
+                };
+                listContainer.appendChild(card);
+            });
+        }
+
+        function resetFilters() {
+            filterState = {
+                types: new Set(['APT', 'OP', 'YH', 'DD']),
+                size: 'all',
+                dealType: 'monthly',
+                grades: new Set(['A', 'B', 'C', 'D']),
+                budget: { depMin: 0, depMax: 999999, rentMin: 0, rentMax: 999999 }
+            };
+            setDealType('monthly');
+            setSize('all');
+            document.querySelectorAll('.filter-type-btn').forEach(btn => {
+                btn.classList.add('active', 'bg-blue-600', 'text-white', 'border-blue-600');
+                btn.classList.remove('bg-gray-50', 'text-slate-500', 'border-slate-200');
+            });
+
+            // Reset Budget Inputs
+            ['budget-dep-min', 'budget-dep-max', 'budget-rent-min', 'budget-rent-max'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+
+            // Reset Grade Toggles (All On)
+            ['A', 'B', 'C', 'D'].forEach(g => {
+                const btn = document.getElementById(`btn-grade-${g}`);
+                if (btn) btn.classList.remove('opacity-50');
+            });
+
+            applyFilter();
+        }
+
+        // --- Layer & Detail Logic ---
+        function toggleLayer(type) {
+            if (type === 'polygon') {
+                isPolygonVisible = !isPolygonVisible;
+                mapObjects.zones.forEach(z => z.setMap(isPolygonVisible ? map : null));
+            } else if (type === 'marker') {
+                if (isReviewVisible) {
+                    // If switching to marker, turn off review
+                    isReviewVisible = false;
+                    isMarkerVisible = true;
+                } else {
+                    isMarkerVisible = !isMarkerVisible;
+                }
+                applyFilter();
+            } else if (type === 'review') {
+                isReviewVisible = !isReviewVisible;
+                if (isReviewVisible) isMarkerVisible = true; // Ensure markers are on if review is toggled
+                applyFilter();
+            } else if (type === 'cctv') {
+                isCctvVisible = !isCctvVisible;
+
+                if (isCctvVisible) {
+                    // Render CCTV markers
+                    MockCCTV.forEach(cctv => {
+                        const content = document.createElement('div');
+                        content.className = "w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center shadow-md border-2 border-white transform hover:scale-110 transition-transform";
+                        content.innerHTML = `<i class="fa-solid fa-video text-[10px] text-white"></i>`;
+
+                        const overlay = new kakao.maps.CustomOverlay({
+                            map: map,
+                            position: new kakao.maps.LatLng(cctv.lat, cctv.lng),
+                            content: content,
+                            yAnchor: 0.5,
+                            zIndex: 10 // Above polygon(1), Below markers(20)
+                        });
+                        mapObjects.cctv.push(overlay);
+                    });
+                } else {
+                    // Remove CCTV markers
+                    mapObjects.cctv.forEach(o => o.setMap(null));
+                    mapObjects.cctv = [];
+                }
+            }
+            updateLayerToggles();
+        }
+
+        function updateLayerToggles() {
+            const polygonBtn = document.getElementById('btn-toggle-polygon');
+            const markerBtn = document.getElementById('btn-toggle-marker');
+            const reviewBtn = document.getElementById('btn-toggle-review');
+            const cctvBtn = document.getElementById('btn-toggle-cctv');
+
+            // Polygon Toggle Style Logic Removed (Replaced by specific Grade Toggles)
+            /*
+            if (isPolygonVisible) {
+                polygonBtn.classList.remove('bg-gray-200');
+                polygonBtn.classList.add('bg-blue-600');
+                polygonBtn.firstElementChild.classList.add('translate-x-5');
+            } else {
+                polygonBtn.classList.remove('bg-blue-600');
+                polygonBtn.classList.add('bg-gray-200');
+                polygonBtn.firstElementChild.classList.remove('translate-x-5');
+            }
+            */
+
+            // Marker Toggle Style
+            if (isMarkerVisible && !isReviewVisible) {
+                markerBtn.classList.remove('bg-gray-200');
+                markerBtn.classList.add('bg-blue-600');
+                markerBtn.firstElementChild.classList.add('translate-x-5');
+            } else {
+                markerBtn.classList.remove('bg-blue-600');
+                markerBtn.classList.add('bg-gray-200');
+                markerBtn.firstElementChild.classList.remove('translate-x-5');
+            }
+
+            // Review Toggle Style
+            if (isReviewVisible) {
+                reviewBtn.classList.remove('bg-gray-200');
+                reviewBtn.classList.add('bg-purple-600');
+                reviewBtn.firstElementChild.classList.add('translate-x-5');
+            } else {
+                reviewBtn.classList.remove('bg-purple-600');
+                reviewBtn.classList.add('bg-gray-200');
+                reviewBtn.firstElementChild.classList.remove('translate-x-5');
+            }
+
+            // CCTV Toggle Style
+            if (isCctvVisible) {
+                cctvBtn.classList.remove('bg-gray-200');
+                cctvBtn.classList.add('bg-blue-600');
+                cctvBtn.firstElementChild.classList.add('translate-x-5');
+            } else {
+                cctvBtn.classList.remove('bg-blue-600');
+                cctvBtn.classList.add('bg-gray-200');
+                cctvBtn.firstElementChild.classList.remove('translate-x-5');
+            }
+        }
+
+        function showDetail(item) {
+            const container = document.getElementById('sidebar-content');
+
+            // Comment logic
+            let gradeComment = "";
+            let gradeColor = "";
+            if (item.grade === 'A') {
+                gradeComment = "안심하세요! 융자 비율과 권리 관계가 깨끗한 추천 매물입니다.";
+                gradeColor = "text-green-600 bg-green-50 border-green-200";
+            } else if (item.grade === 'B') {
+                gradeComment = "주변 시세 대비 합리적입니다. 등기부등본을 한번 더 확인하세요.";
+                gradeColor = "text-yellow-600 bg-yellow-50 border-yellow-200";
+            } else if (item.grade === 'C') {
+                gradeComment = "⚠️ 근린생활시설일 수 있습니다. 주거용 용도 변경 여부를 확인하세요.";
+                gradeColor = "text-orange-600 bg-orange-50 border-orange-200";
+            } else {
+                gradeComment = "🚨 <strong>위반건축물</strong> 리스크가 높습니다. 전세대출 불가 가능성 체크 필수.";
+                gradeColor = "text-red-600 bg-red-50 border-red-200";
+            }
+
+            // 네이버 부동산 동적 링크 생성
+            const searchKeyword = "관악구 신림동 " + item.name;
+            const naverUrl = "https://m.land.naver.com/search/result/" + encodeURIComponent(searchKeyword);
+
+            // 경사도 뱃지 로직
+            let slopeBadge = '';
+            if (item.slope <= 3) slopeBadge = '<span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold">🟢 완전 평지</span>';
+            else if (item.slope <= 8) slopeBadge = '<span class="bg-yellow-100 text-yellow-700 px-2 py-1 rounded text-xs font-bold">🟡 완만한 언덕</span>';
+            else if (item.slope <= 15) slopeBadge = '<span class="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-bold">🟠 오르막길</span>';
+            else slopeBadge = '<span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-bold">🔴 급경사 주의</span>';
+
+            container.innerHTML = `
+                <div class="animate-fade-in h-full flex flex-col">
+                    <button onclick="restoreList()" class="mb-4 text-xs font-bold text-slate-500 hover:text-blue-600 flex items-center gap-1 shrink-0">
+                        <i class="fa-solid fa-arrow-left"></i> 목록으로 돌아가기
+                    </button>
+                    
+                    <div class="flex-1 overflow-y-auto pr-1">
+                        <!-- Safety Analysis Report -->
+                        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mb-4">
+                            <h3 class="font-bold text-slate-800 mb-4 flex items-center justify-between">
+                                <span>🛡️ 안심 분석 리포트</span>
+                                <span class="px-2 py-1 rounded text-xs border ${gradeColor}">Grade ${item.grade}</span>
+                            </h3>
+                            
+                            <!-- Radar Chart -->
+                            <div class="relative h-48 mb-4 flex justify-center">
+                                <canvas id="safetyChart"></canvas>
+                            </div>
+
+                            <!-- SWOT Analysis Section -->
+                            <div class="mb-2 pt-4 border-t border-slate-100">
+                                <div class="flex items-end gap-2 mb-3">
+                                    <h3 class="font-bold text-sm text-slate-800">🔮 미래 가치 분석 (SWOT)</h3>
+                                    <span class="text-[10px] text-slate-400 font-medium pb-0.5">"영원한 건 절대 없어!"</span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div class="bg-blue-50 p-2.5 rounded-lg border border-blue-100">
+                                        <h4 class="text-[11px] font-bold text-blue-700 mb-1 flex items-center"><i class="fa-solid fa-thumbs-up mr-1.5"></i>S (강점)</h4>
+                                        <ul class="text-[10px] text-slate-600 space-y-0.5 list-disc list-inside">
+                                            ${item.swot ? item.swot.s.map(t => `<li class="truncate">${t}</li>`).join('') : '<li>분석 중...</li>'}
+                                        </ul>
+                                    </div>
+                                    <div class="bg-red-50 p-2.5 rounded-lg border border-red-100">
+                                        <h4 class="text-[11px] font-bold text-red-700 mb-1 flex items-center"><i class="fa-solid fa-triangle-exclamation mr-1.5"></i>W (약점)</h4>
+                                        <ul class="text-[10px] text-slate-600 space-y-0.5 list-disc list-inside">
+                                            ${item.swot ? item.swot.w.map(t => `<li class="truncate">${t}</li>`).join('') : '<li>분석 중...</li>'}
+                                        </ul>
+                                    </div>
+                                    <div class="bg-green-50 p-2.5 rounded-lg border border-green-100">
+                                        <h4 class="text-[11px] font-bold text-green-700 mb-1 flex items-center"><i class="fa-solid fa-seedling mr-1.5"></i>O (기회)</h4>
+                                        <ul class="text-[10px] text-slate-600 space-y-0.5 list-disc list-inside">
+                                            ${item.swot ? item.swot.o.map(t => `<li class="truncate">${t}</li>`).join('') : '<li>분석 중...</li>'}
+                                        </ul>
+                                    </div>
+                                    <div class="bg-orange-50 p-2.5 rounded-lg border border-orange-100">
+                                        <h4 class="text-[11px] font-bold text-orange-700 mb-1 flex items-center"><i class="fa-solid fa-skull-crossbones mr-1.5"></i>T (위협)</h4>
+                                        <ul class="text-[10px] text-slate-600 space-y-0.5 list-disc list-inside">
+                                            ${item.swot ? item.swot.t.map(t => `<li class="truncate">${t}</li>`).join('') : '<li>분석 중...</li>'}
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Comment -->
+                            <div class="p-3 rounded-xl border text-xs leading-relaxed ${gradeColor}">
+                                ${gradeComment}
+                            </div>
+                        </div>
+
+                        <!-- Basic Info -->
+                        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden shrink-0">
+                            <div class="h-32 bg-slate-100 flex items-center justify-center relative">
+                                <i class="fa-solid fa-house text-4xl text-slate-300"></i>
+                                <div class="absolute bottom-0 left-0 w-full p-4 bg-gradient-to-t from-black/60 to-transparent">
+                                    <span class="text-white font-bold text-xl">${formatPrice(item.price)}</span>
+                                </div>
+                            </div>
+                            <div class="p-5">
+                                <div class="flex gap-2 mb-3">
+                                    <span class="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-bold">${TypeNames[item.type]}</span>
+                                    <span class="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-bold">${item.size}평</span>
+                                </div>
+                                <h2 class="text-lg font-bold text-slate-900 mb-2">${item.name}</h2>
+                                <p class="text-xs text-slate-500 mb-2 flex items-center gap-2">
+                                    <i class="fa-solid fa-location-dot"></i> 신림역 인근 · ${item.floor}
+                                </p>
+                                <div class="flex items-center gap-2 mb-6">
+                                    ${slopeBadge}
+                                    <span class="text-xs text-gray-400">경사도 ${item.slope}°</span>
+                                </div>
+                                <a href="${naverUrl}" target="_blank" 
+                                    class="flex items-center justify-center gap-2 w-full py-3 bg-[#03C75A] hover:bg-[#02b351] text-white font-bold rounded-xl shadow-md transition-colors text-sm">
+                                    <span class="font-extrabold text-base">N</span> 네이버 부동산 시세 보기 ↗️
+                                </a>
+                                
+                                <div class="mt-4 pt-4 border-t border-slate-100">
+                                    <h4 class="text-xs font-bold text-slate-500 mb-2">🗣️ 입주민 찐 후기</h4>
+                                    ${item.reviewCount > 0
+                    ? `<div class="bg-purple-50 p-3 rounded-xl border border-purple-100">
+                                             <div class="flex items-center gap-1 mb-1">
+                                                 <span class="text-xs font-bold text-purple-700">★ ${item.rating}</span>
+                                                 <span class="text-[10px] text-purple-400">(${item.reviewCount}개 리뷰)</span>
+                                             </div>
+                                             <p class="text-xs text-slate-700 font-medium">"${item.pros}"</p>
+                                           </div>`
+                    : `<div class="text-center py-4 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                                             <span class="text-xs text-slate-400">등록된 후기가 없습니다.</span>
+                                           </div>`
+                }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            if (window.innerWidth < 768) toggleSidebar(true);
+
+            // Render Chart
+            renderChart(item.scores);
+        }
+
+        function showZoneDetail(props) {
+            const container = document.getElementById('sidebar-content');
+
+            let gradeColor = "";
+            let gradeComment = "";
+            if (props.grade === 'A') {
+                gradeColor = "text-green-600 bg-green-50 border-green-200";
+                gradeComment = "안전 등급 최우수 지역입니다.";
+            } else if (props.grade === 'B') {
+                gradeColor = "text-yellow-600 bg-yellow-50 border-yellow-200";
+                gradeComment = "대체로 양호하나 일부 주의가 필요합니다.";
+            } else if (props.grade === 'C') {
+                gradeColor = "text-orange-600 bg-orange-50 border-orange-200";
+                gradeComment = "생활 치안 및 주거 환경 개선이 필요합니다.";
+            } else {
+                gradeColor = "text-red-600 bg-red-50 border-red-200";
+                gradeComment = "집중 관리 대상 지역입니다.";
+            }
+
+            const stats = props.stats || { cctv: 0, infra: 0, viol_rate: 0 };
+
+            container.innerHTML = `
+                <div class="animate-fade-in h-full flex flex-col">
+                    <button onclick="restoreList()" class="mb-4 text-xs font-bold text-slate-500 hover:text-blue-600 flex items-center gap-1 shrink-0">
+                        <i class="fa-solid fa-arrow-left"></i> 목록으로 돌아가기
+                    </button>
+                    
+                    <div class="flex-1 overflow-y-auto pr-1">
+                        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mb-4">
+                            <h3 class="font-bold text-slate-800 mb-4 flex items-center justify-between">
+                                <span>🛡️ ${props.adm_nm} 안심 리포트</span>
+                                <span class="px-2 py-1 rounded text-xs border ${gradeColor}">Grade ${props.grade}</span>
+                            </h3>
+                            <div class="relative h-48 mb-4 flex justify-center">
+                                <canvas id="safetyChart"></canvas>
+                            </div>
+                            <div class="p-3 rounded-xl border text-xs leading-relaxed ${gradeColor}">
+                                ${gradeComment}
+                            </div>
+                        </div>
+
+                         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+                            <h4 class="font-bold text-slate-700 mb-3 text-sm">📊 지역 통계</h4>
+                            <div class="grid grid-cols-2 gap-3 text-center">
+                                <div class="bg-slate-50 p-3 rounded-xl">
+                                    <div class="text-xs text-slate-500 mb-1">CCTV</div>
+                                    <div class="font-bold text-blue-600">${stats.cctv}대</div>
+                                </div>
+                                <div class="bg-slate-50 p-3 rounded-xl">
+                                    <div class="text-xs text-slate-500 mb-1">편의시설</div>
+                                    <div class="font-bold text-slate-700">${stats.infra}개</div>
+                                </div>
+                                <div class="bg-slate-50 p-3 rounded-xl col-span-2">
+                                    <div class="text-xs text-slate-500 mb-1">위반건축물 비율</div>
+                                    <div class="font-bold ${stats.viol_rate > 0.3 ? 'text-red-500' : 'text-green-600'}">${(stats.viol_rate * 100).toFixed(1)}%</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            if (window.innerWidth < 768) toggleSidebar(true);
+
+            renderChart(props.scores);
+        }
+
+        function showToast(message) {
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                document.body.appendChild(container);
+            }
+
+            const toast = document.createElement('div');
+            toast.className = 'toast-msg';
+            toast.innerText = message;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('toast-out');
+                toast.addEventListener('animationend', () => toast.remove());
+            }, 3000);
+        }
+
+        function restoreList() {
+            renderInitialList();
+            applyFilter();
+        }
+
+        function renderChart(scores) {
+            const ctx = document.getElementById('safetyChart').getContext('2d');
+            if (chartInstance) chartInstance.destroy();
+
+            chartInstance = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: [
+                        `치안·안전 ${scores.security_safety > 80 ? '(👍안심)' : ''}`,
+                        `물건/건물 ${scores.property_building < 50 ? '(👎노후)' : ''}`,
+                        `주거 쾌적성 ${scores.living_comfort > 80 ? '(👍숲세권)' : ''}`,
+                        `생활 인프라 ${scores.living_infra > 80 ? '(👍슬세권)' : ''}`,
+                        `교통 ${scores.traffic > 80 ? '(👍초역세권)' : ''}`,
+                        `환경 ${scores.environment < 40 ? '(👎소음)' : ''}`
+                    ],
+                    datasets: [{
+                        label: '안심 점수',
+                        data: [
+                            scores.security_safety,
+                            scores.property_building,
+                            scores.living_comfort,
+                            scores.living_infra,
+                            scores.traffic,
+                            scores.environment
+                        ],
+                        fill: true,
+                        backgroundColor: 'rgba(37, 99, 235, 0.2)',
+                        borderColor: 'rgb(37, 99, 235)',
+                        pointBackgroundColor: 'rgb(37, 99, 235)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgb(37, 99, 235)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            min: 0,
+                            max: 100,
+                            ticks: { display: false, stepSize: 20 },
+                            pointLabels: {
+                                font: { size: 10, family: 'Pretendard', weight: 'bold' },
+                                color: '#475569'
+                            }
+                        }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        function toggleSidebar(show) {
+            const sb = document.getElementById('sidebar');
+            if (window.innerWidth < 768) show ? sb.classList.remove('translate-y-full') : sb.classList.add('translate-y-full');
+        }
+    </script>
+    <script>
+        // [기능 복구] 검색 및 개인화 활성화
+        // [기능 복구] 검색 및 개인화 활성화
+        function applyPersonalization(data, typeId) {
+            const toast = document.getElementById('persona-toast');
+            const nameSpan = document.getElementById('persona-name');
+            const typeNames = {
+                '1': '청와대 경호실장형', '2': '순간이동 능력자형', '3': '프로 편의점 러버형', '4': '실속파 갓생러형',
+                '5': '대치동 학원가 드리프트형', '6': '숲세권 은둔 고수형', '7': '배달의민족 VVIP형', '8': '강남행 교두보 헌터형',
+                '9': '한강공원 러닝 크루형', '10': '풀옵션 미니멀리스트형', '11': '주차장 보안 요원형', '12': '프로 집콕러형',
+                '13': '우리 동네 보안관형', '14': '가성비 신도시 이주민형', '15': '1인 가구 세탁 요정형', '16': '커뮤니티 정복자형'
+            };
+
+            // Recommendation Data Definition
+            const recommendationData = {
+                '1': [ // 치안
+                    { name: '송파구 잠실동', desc: '치안 1등급 · CCTV 밀집도 최상', lat: 37.512, lng: 127.086 },
+                    { name: '서초구 반포동', desc: '유해시설 0% · 안심 주거지역', lat: 37.503, lng: 127.005 },
+                    { name: '강남구 일원동', desc: '경찰서 접근성 우수 · 쾌적', lat: 37.491, lng: 127.087 }
+                ],
+                '2': [ // 교통
+                    { name: '마포구 서교동', desc: '2호선/공항철도 더블 역세권', lat: 37.553, lng: 126.922 },
+                    { name: '관악구 청룡동', desc: '강남 접근성 탁월 · 2호선', lat: 37.479, lng: 126.953 },
+                    { name: '동작구 사당동', desc: '교통의 요지 · 4호선/2호선', lat: 37.483, lng: 126.981 }
+                ],
+                '3': [ // 편의
+                    { name: '강남구 역삼1동', desc: '모든 편의시설 도보 5분', lat: 37.500, lng: 127.036 },
+                    { name: '광진구 화양동', desc: '먹자골목/시장 인접 건대입구', lat: 37.541, lng: 127.070 },
+                    { name: '관악구 신림동', desc: '1인 가구 최적화 상권', lat: 37.483, lng: 126.928 }
+                ],
+                '4': [ // 자연 (실속+환경)
+                    { name: '광진구 자양동', desc: '한강공원 바로 앞 쾌적성', lat: 37.531, lng: 127.074 },
+                    { name: '마포구 망원동', desc: '망원한강공원 인접', lat: 37.556, lng: 126.901 },
+                    { name: '성동구 성수동', desc: '서울숲세권의 여유', lat: 37.544, lng: 127.044 }
+                ],
+                '5': [ // 직주 (교육/학원가로 요청 변경됨 -> 대치동 학원가형이 5번? 5번은 직주?)
+                    // 사용자 요청 5번=봉천/상계(직주근접)으로 명시됨
+                    { name: '관악구 봉천동', desc: '강남 출퇴근 용이한 가성비', lat: 37.482, lng: 126.952 },
+                    { name: '노원구 상계동', desc: '동북권 직주근접 중심', lat: 37.660, lng: 127.073 },
+                    { name: '강서구 화곡동', desc: '여의도/마곡 출퇴근 최적', lat: 37.540, lng: 126.845 }
+                ],
+                '6': [ // 교육 (숲세권으로 명시되어 있으나 데이터는 교육?)
+                    // 사용자 요청 6번=대치/중계(교육)
+                    { name: '강남구 대치동', desc: '대한민국 사교육 1번지', lat: 37.495, lng: 127.061 },
+                    { name: '노원구 중계동', desc: '강북의 대치동 은행사거리', lat: 37.649, lng: 127.076 },
+                    { name: '양천구 목동', desc: '전통 명문 학군 지역', lat: 37.528, lng: 126.871 }
+                ],
+                // 가상 데이터 (7~16) - 임의 할당
+                '7': [{ name: '관악구 신림동', desc: '배달 맛집 최다 밀집', lat: 37.483, lng: 126.928 }, { name: '강남구 논현동', desc: '24시간 배달 가능 지역', lat: 37.511, lng: 127.028 }, { name: '송파구 방이동', desc: '먹자골목 인프라', lat: 37.510, lng: 127.110 }],
+                '8': [{ name: '서초구 반포동', desc: '강남 접근성 최상', lat: 37.503, lng: 127.005 }, { name: '성동구 옥수동', desc: '강남 진입 5분', lat: 37.541, lng: 127.017 }, { name: '동작구 흑석동', desc: '9호선라인 황금 입지', lat: 37.508, lng: 126.963 }],
+                '9': [{ name: '서초구 잠원동', desc: '잠원한강공원 러닝코스', lat: 37.519, lng: 127.012 }, { name: '영등포구 여의도동', desc: '여의도 공원 러닝', lat: 37.521, lng: 126.924 }, { name: '마포구 상수동', desc: '한강변 조깅 코스', lat: 37.547, lng: 126.922 }],
+                '10': [{ name: '관악구 봉천동', desc: '풀옵션 원룸 다수', lat: 37.482, lng: 126.952 }, { name: '동작구 노량진동', desc: '가성비 풀옵션', lat: 37.513, lng: 126.941 }, { name: '구로구 구로동', desc: '오피스텔 밀집', lat: 37.494, lng: 126.886 }],
+                '11': [{ name: '강동구 천호동', desc: '주차 공간 확보 용이', lat: 37.543, lng: 127.125 }, { name: '송파구 가락동', desc: '신축 빌라 필로티 주차', lat: 37.496, lng: 127.123 }, { name: '은평구 연신내', desc: '단독주택 주차장', lat: 37.618, lng: 126.920 }],
+                '12': [{ name: '경기도 김포시', desc: '넓은 평수 쾌적한 집', lat: 37.615, lng: 126.715 }, { name: '남양주 다산', desc: '조용한 신도시 라이프', lat: 37.625, lng: 127.160 }, { name: '파주 운정', desc: '쾌적한 대단지', lat: 37.716, lng: 126.747 }],
+                '13': [{ name: '서대문구 연희동', desc: '이웃 간 소통 활발', lat: 37.570, lng: 126.931 }, { name: '종로구 부암동', desc: '전통적인 마을 공동체', lat: 37.592, lng: 126.965 }, { name: '성북구 성북동', desc: '안전하고 조용한 마을', lat: 37.596, lng: 126.992 }],
+                '14': [{ name: '하남 미사', desc: '신축 인프라 가성비', lat: 37.561, lng: 127.195 }, { name: '고양 삼송', desc: '스타필드세권', lat: 37.647, lng: 126.897 }, { name: '인천 송도', desc: '국제도시 인프라', lat: 37.394, lng: 126.639 }],
+                '15': [{ name: '강남구 논현동', desc: '코인세탁소 다수', lat: 37.511, lng: 127.028 }, { name: '마포구 연남동', desc: '세탁 편의점 많음', lat: 37.561, lng: 126.925 }, { name: '관악구 대학동', desc: '1인 가구 서비스 최적', lat: 37.469, lng: 126.937 }],
+                '16': [{ name: '마포구 망원동', desc: '망원시장 소모임', lat: 37.556, lng: 126.901 }, { name: '용산구 해방촌', desc: '다국적 커뮤니티', lat: 37.544, lng: 126.987 }, { name: '성동구 성수동', desc: '힙플레이스 크루', lat: 37.544, lng: 127.044 }]
+            };
+
+            const recList = recommendationData[typeId];
+
+            if (toast && nameSpan && typeNames[typeId]) {
+                nameSpan.innerText = typeNames[typeId];
+                toast.classList.remove('hidden');
+                toast.classList.add('animate-fade-in-up');
+
+                // Recommendation UI Logic
+                if (recList) {
+                    const topRecBox = document.getElementById('top-recommendation');
+                    const topTitle = document.getElementById('top-title');
+                    const topList = document.getElementById('top-list');
+
+                    if (topRecBox && topTitle && topList) {
+                        topRecBox.classList.remove('hidden');
+                        topTitle.innerText = typeNames[typeId];
+
+                        const listHtml = recList.map((item, index) => `
+                            <div class="flex items-center justify-between p-3 bg-white rounded-lg border border-indigo-50 hover:border-indigo-300 cursor-pointer transition-colors shadow-sm" onclick="event.stopPropagation(); map.panTo(new kakao.maps.LatLng(${item.lat}, ${item.lng}));">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">${index + 1}위</span>
+                                        <span class="text-sm font-bold text-slate-800">${item.name}</span>
+                                    </div>
+                                    <p class="text-xs text-slate-500 mt-1 pl-1">${item.desc}</p>
+                                </div>
+                                <i class="fa-solid fa-chevron-right text-xs text-gray-300"></i>
+                            </div>
+                        `).join('');
+
+                        topList.innerHTML = listHtml;
+
+                        // Auto Pan to Top 1
+                        if (recList.length > 0 && map) {
+                            // Delay slightly to ensure map is ready
+                            setTimeout(() => {
+                                map.panTo(new kakao.maps.LatLng(recList[0].lat, recList[0].lng));
+                            }, 300);
+                        }
+                    }
+                }
+
+                setTimeout(() => {
+                    toast.classList.add('opacity-0', 'transition-opacity', 'duration-500');
+                    setTimeout(() => toast.classList.add('hidden'), 500);
+                }, 4000);
+            }
+        }
+
+        function activateSearch() {
+            const searchInput = document.getElementById('keyword-input');
+            const searchBtn = document.getElementById('search-btn');
+            if (!searchInput || !searchBtn) return;
+
+            const ps = new kakao.maps.services.Places();
+
+            const runSearch = () => {
+                const keyword = searchInput.value.trim();
+                if (!keyword) { alert('검색어를 입력해주세요!'); return; }
+
+                ps.keywordSearch(keyword, (data, status) => {
+                    if (status === kakao.maps.services.Status.OK) {
+                        const bounds = new kakao.maps.LatLngBounds();
+                        for (let i = 0; i < data.length; i++) {
+                            bounds.extend(new kakao.maps.LatLng(data[i].y, data[i].x));
+                        }
+                        map.setBounds(bounds);
+                    } else {
+                        alert('검색 결과가 없습니다.');
+                    }
+                });
+            };
+
+            searchBtn.onclick = runSearch;
+            searchInput.onkeydown = (e) => { if (e.key === 'Enter') runSearch(); };
+        }
+
+        function toggleLegend() {
+            const legend = document.getElementById('map-legend');
+            // Simple toggle with animation class handling if needed, but 'hidden' is sufficient for now
+            legend.classList.toggle('hidden');
+        }
+
+        window.addEventListener('load', () => {
+            activateSearch();
+            const params = new URLSearchParams(window.location.search);
+            const currentType = params.get('type') || params.get('persona');
+            if (currentType) {
+                // 데이터 로드 시점 문제 방지를 위한 지연 실행
+                setTimeout(() => applyPersonalization(null, currentType), 500);
+            }
+        });
+    </script>
+</body>
+
+</html>

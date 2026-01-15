@@ -1,0 +1,12 @@
+:root {
+    --primary-color: #3b82f6;
+    /* Tailwind Blue-500 */
+    --text-main: #1f2937;
+    --bg-sidebar: #ffffff;
+    --border-color: #e5e7eb;
+
+    /* 안전등급 색상 */
+    --safe-green: #22c55e;
+    --warning-yellow: #eab308;
+    --danger-red: #ef4444;
+}

@@ -1,0 +1,75 @@
+@import 'theme.css';
+
+/* 전체 화면 꽉 채우기 */
+html,
+body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    /* 스크롤 방지 */
+}
+
+/* 지도 컨테이너 */
+#map-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    z-index: 1;
+}
+
+/* 커스텀 스크롤바 (사이드바용) */
+.custom-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+
+.custom-scroll::-webkit-scrollbar-thumb {
+    background-color: #d1d5db;
+    border-radius: 3px;
+}
+
+/* 
+   ----------------------------------------
+   동네 분석 리포트 스타일 (Official Report Style)
+   ----------------------------------------
+*/
+
+/* 등급별 뱃지 스타일 */
+.badge-grade-a {
+    background-color: #d1fae5;
+    /* green-100 */
+    color: #059669;
+    /* green-600 */
+    border: 1px solid #a7f3d0;
+}
+
+.badge-grade-b {
+    background-color: #dbeafe;
+    /* blue-100 */
+    color: #2563eb;
+    /* blue-600 */
+    border: 1px solid #bfdbfe;
+}
+
+.badge-grade-c {
+    background-color: #fef3c7;
+    /* yellow-100 */
+    color: #d97706;
+    /* yellow-600 */
+    border: 1px solid #fde68a;
+}
+
+.badge-grade-f {
+    background-color: #fee2e2;
+    /* red-100 */
+    color: #dc2626;
+    /* red-600 */
+    border: 1px solid #fecaca;
+}
+
+/* 리포트 패널 공적 느낌 강화 */
+#analysis-report {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    background-image: linear-gradient(to bottom right, #ffffff, #eff6ff);
+}

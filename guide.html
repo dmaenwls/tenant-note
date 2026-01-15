@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tenant Note | 세입자를 위한 안전 지킴이</title>
+    <meta name="description" content="등기부등본 분석부터 실거주 찐후기까지. 2030 전월세 계약의 모든 것.">
+    <meta property="og:title" content="Tenant Note - 내 보증금 지키는 가장 쉬운 방법">
+    <meta property="og:description" content="현직 감정평가사가 만든 전월세 안전 진단 & 가이드">
+    <meta property="og:image" content="https://via.placeholder.com/1200x630/2563eb/ffffff?text=Tenant+Note">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" as="style" crossorigin
+        href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        body {
+            font-family: "Pretendard Variable", Pretendard, sans-serif;
+            background-color: #f8fafc;
+        }
+
+        .progress-bar-fill {
+            transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Checkbox Custom Style */
+        .custom-checkbox:checked+label .check-icon {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .custom-checkbox:checked+label .check-text {
+            text-decoration: line-through;
+            color: #94a3b8;
+        }
+
+        /* Step Active State */
+        .step-item.active .step-circle {
+            background-color: #2563eb;
+            color: white;
+            border-color: #2563eb;
+        }
+
+        .step-item.active .step-title {
+            color: #2563eb;
+            font-weight: 700;
+        }
+
+        .step-item.completed .step-circle {
+            background-color: #2563eb;
+            color: white;
+            border-color: #2563eb;
+        }
+
+        /* Tabs */
+        .tab-btn.active {
+            color: #2563eb;
+            border-bottom-color: #2563eb;
+            font-weight: 700;
+        }
+
+        /* Card Hover */
+        .todo-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .animate-fade-in-up {
+            animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+    </style>
+    <script src="js/config.js"></script>
+</head>
+
+<body class="text-slate-900 min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-50 w-full border-b border-gray-200 bg-white/95 backdrop-blur-md">
+        <div class="mx-auto flex h-24 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+            <a href="index.html" class="flex flex-col leading-none group">
+                <div class="flex items-center gap-1.5">
+                    <span
+                        class="text-2xl font-black text-blue-600 tracking-tight group-hover:scale-105 transition-transform">Tenant
+                        Note</span>
+                    <span class="rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-bold text-blue-700">Beta</span>
+                </div>
+                <span class="text-xs font-medium text-gray-400 mt-1.5 tracking-wide">세입자를 위한 안전 지킴이</span>
+            </a>
+
+            <nav class="hidden md:flex items-center gap-10">
+                <a href="reviews.html" class="group flex flex-col items-center justify-center gap-1 py-2">
+                    <span class="text-lg font-bold text-gray-800 transition group-hover:text-blue-600">동네 분석</span>
+                    <span class="text-xs font-medium text-gray-500 transition group-hover:text-blue-500">여기 살기
+                        어때요?</span>
+                </a>
+                <a href="safety.html" class="group flex flex-col items-center justify-center gap-1 py-2">
+                    <span class="text-lg font-bold text-gray-800 transition group-hover:text-blue-600">물건 분석</span>
+                    <span class="text-xs font-medium text-gray-500 transition group-hover:text-blue-500">여기 계약해도
+                        될까?</span>
+                </a>
+                <a href="guide.html" class="group flex flex-col items-center justify-center gap-1 py-2">
+                    <span class="text-lg font-bold text-gray-800 transition group-hover:text-blue-600">계약/이사 가이드</span>
+                    <span class="text-xs font-medium text-gray-500 transition group-hover:text-blue-500">이제 뭘 해야
+                        하지?</span>
+                </a>
+                <a href="community.html" class="group flex flex-col items-center justify-center gap-1 py-2">
+                    <span class="text-lg font-bold text-gray-800 transition group-hover:text-blue-600">테넌트 라운지</span>
+                    <span class="text-xs font-medium text-gray-500 transition group-hover:text-blue-500">나랑 같은 고민
+                        상담</span>
+                </a>
+                <a href="insight.html" class="group flex flex-col items-center justify-center gap-1 py-2">
+                    <span class="text-lg font-bold text-gray-800 transition group-hover:text-blue-600">인사이트</span>
+                    <span class="text-xs font-medium text-gray-500 transition group-hover:text-blue-500">전문가의
+                        팩트체크</span>
+                </a>
+            </nav>
+
+            <div class="hidden md:flex items-center gap-4">
+                <button class="text-base font-semibold text-gray-500 hover:text-gray-900 transition">로그인</button>
+                <a href="#" onclick="document.getElementById('review-modal').classList.remove('hidden'); return false;"
+                    class="rounded-xl bg-blue-600 px-5 py-2.5 text-base font-bold text-white shadow-lg hover:bg-blue-500 transition hover:-translate-y-0.5">
+                    후기 남기기
+                </a>
+            </div>
+
+            <button id="mobile-menu-btn" class="md:hidden p-2 text-gray-600 hover:text-blue-600 focus:outline-none">
+                <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16">
+                    </path>
+                </svg>
+            </button>
+        </div>
+
+        <div id="mobile-menu" class="hidden md:hidden border-t border-gray-100 bg-white">
+            <div class="space-y-1 px-4 py-6">
+                <a href="reviews.html"
+                    class="block rounded-lg px-4 py-3 text-base font-bold text-gray-800 hover:bg-blue-50 hover:text-blue-600">동네
+                    분석 <span class="ml-2 text-xs font-normal text-gray-500">여기 살기 어때요?</span></a>
+                <a href="safety.html"
+                    class="block rounded-lg px-4 py-3 text-base font-bold text-gray-800 hover:bg-blue-50 hover:text-blue-600">물건
+                    분석 <span class="ml-2 text-xs font-normal text-gray-500">여기 계약해도 될까?</span></a>
+                <a href="guide.html"
+                    class="block rounded-lg px-4 py-3 text-base font-bold text-gray-800 hover:bg-blue-50 hover:text-blue-600">계약/이사
+                    가이드 <span class="ml-2 text-xs font-normal text-gray-500">이제 뭘 해야 하지?</span></a>
+                <a href="community.html"
+                    class="block rounded-lg px-4 py-3 text-base font-bold text-gray-800 hover:bg-blue-50 hover:text-blue-600">테넌트
+                    라운지
+                    <span class="ml-2 text-xs font-normal text-gray-500">나랑 같은 고민 상담</span></a>
+                <a href="insight.html"
+                    class="block rounded-lg px-4 py-3 text-base font-bold text-gray-800 hover:bg-blue-50 hover:text-blue-600">인사이트
+                    <span class="ml-2 text-xs font-normal text-gray-500">전문가의 팩트체크</span></a>
+                <div class="mt-6 border-t border-gray-100 pt-6">
+                    <a href="#"
+                        class="block w-full rounded-lg bg-gray-100 px-4 py-3 text-center text-base font-bold text-gray-600 hover:bg-gray-200">로그인</a>
+                    <a href="#"
+                        onclick="document.getElementById('review-modal').classList.remove('hidden'); return false;"
+                        class="mt-3 block w-full rounded-lg bg-blue-600 px-4 py-3 text-center text-base font-bold text-white hover:bg-blue-500">후기
+                        남기기</a>
+                </div>
+            </div>
+        </div>
+        <script>
+            const btn = document.getElementById('mobile-menu-btn');
+            const menu = document.getElementById('mobile-menu');
+            btn.addEventListener('click', () => { menu.classList.toggle('hidden'); });
+        </script>
+    </header>
+
+    <!-- Hero Dashboard -->
+    <section class="bg-white pt-10 pb-8 border-b border-slate-200">
+        <div class="container mx-auto px-4 max-w-5xl">
+            <div class="flex flex-col md:flex-row items-end justify-between gap-6 mb-6">
+                <div>
+                    <span
+                        class="inline-block bg-blue-100 text-blue-700 font-bold px-3 py-1 rounded-full text-xs mb-3">🏡
+                        행복한 독립 프로젝트</span>
+                    <h1 class="text-3xl md:text-4xl font-bold text-slate-900">
+                        김세입님, 이사 준비가 <span id="total-progress-text" class="text-blue-600">0%</span> 진행되었어요!
+                    </h1>
+                </div>
+                <div class="bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-lg flex items-center gap-3 animate-bounce cursor-pointer"
+                    onclick="toggleDDayMode()">
+                    <span class="text-2xl">📅</span>
+                    <div>
+                        <p class="text-xs text-slate-400 font-bold uppercase tracking-wider">Target Day</p>
+                        <p id="d-day-text" class="text-xl font-bold">입주까지 D-20</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="bg-slate-100 h-4 rounded-full overflow-hidden relative">
+                <div id="total-progress-bar"
+                    class="bg-gradient-to-r from-blue-400 to-blue-600 h-full w-0 progress-bar-fill relative">
+                    <div
+                        class="absolute right-0 top-0 bottom-0 w-[2px] bg-white/50 shadow-[0_0_10px_rgba(255,255,255,0.8)]">
+                    </div>
+                </div>
+            </div>
+            <p class="text-right text-xs text-slate-400 mt-2 font-medium">완료 항목 <span id="completed-count">0</span> /
+                <span id="total-count">20</span>
+            </p>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <section class="flex-1 py-8 md:py-12">
+        <div class="container mx-auto px-4 max-w-5xl">
+
+            <!-- Step Navigation (Subway Style) -->
+            <div class="relative flex justify-between items-center mb-12 px-2 md:px-12 overflow-x-auto">
+                <!-- Line -->
+                <div
+                    class="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-1 bg-slate-200 -z-10 mx-8 md:mx-16 min-w-[600px] md:min-w-0">
+                </div>
+
+                <!-- Steps will be injected here -->
+                <div id="step-nav" class="contents"></div>
+            </div>
+
+            <!-- Dashboard Split View -->
+            <div class="flex flex-col lg:flex-row gap-8">
+
+                <!-- Left: Checklist Area -->
+                <div class="flex-1 space-y-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <h2 id="active-step-title" class="text-xl font-bold text-slate-900">Step 1. 탐색 및 검증</h2>
+                        <button onclick="resetCurrentStep()"
+                            class="text-xs text-slate-400 hover:text-red-500 underline">이 단계 초기화</button>
+                    </div>
+
+                    <div id="checklist-container" class="space-y-3">
+                        <!-- Checklist Items Injected Here -->
+                    </div>
+                </div>
+
+                <!-- Right: Guide / Tab Card -->
+                <div class="w-full lg:w-[400px] shrink-0">
+                    <!-- Standard Guide Card (Steps 1-4) -->
+                    <div id="guide-card"
+                        class="bg-white border border-blue-100 rounded-3xl p-6 shadow-lg shadow-blue-50/50 sticky top-24 hidden">
+                        <div class="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center text-2xl mb-4">💡
+                        </div>
+                        <h3 id="guide-title" class="text-lg font-bold text-slate-900 mb-2">등기부등본, 뭘 봐야해요?</h3>
+                        <p id="guide-desc" class="text-slate-600 text-sm leading-relaxed mb-6">
+                            '갑구'에서 소유자가 집주인과 동일한지 확인하고, '을구'에서 근저당권(빚)이 너무 많지 않은지 꼭 체크하세요!
+                        </p>
+                        <a href="safety.html"
+                            class="block w-full py-3 bg-blue-600 hover:bg-blue-700 text-white text-center rounded-xl font-bold transition-colors text-sm">
+                            내 집 안전진단 하러가기 →
+                        </a>
+                    </div>
+
+                    <!-- Special Tabbed UI (Step 5) -->
+                    <div id="step5-ui"
+                        class="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-xl sticky top-24 hidden">
+                        <!-- Tabs -->
+                        <div class="flex bg-slate-50 border-b border-slate-200">
+                            <button onclick="switchStep5Tab('maintenance')" id="tab-maintenance"
+                                class="flex-1 py-4 text-sm font-bold text-slate-500 hover:bg-white hover:text-blue-600 transition-colors border-b-2 border-transparent active">🛠️
+                                수리 해결사</button>
+                            <button onclick="switchStep5Tab('renewal')" id="tab-renewal"
+                                class="flex-1 py-4 text-sm font-bold text-slate-500 hover:bg-white hover:text-blue-600 transition-colors border-b-2 border-transparent">🔄
+                                만기/재계약</button>
+                        </div>
+
+                        <!-- Content: Maintenance -->
+                        <div id="panel-maintenance" class="p-4 space-y-6 h-[500px] overflow-y-auto">
+                            <!-- 1. Dispute Cards -->
+                            <div class="space-y-3">
+                                <h3 class="font-bold text-slate-900 flex items-center gap-2 text-sm">
+                                    <i class="fa-solid fa-gavel text-slate-400"></i> 빈번한 수리 분쟁 BEST 3
+                                </h3>
+
+                                <!-- Card 1: Mold -->
+                                <div
+                                    class="bg-white p-4 rounded-2xl border border-red-100 shadow-sm relative overflow-hidden group hover:border-red-200 transition-colors">
+                                    <div
+                                        class="absolute top-0 right-0 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg">
+                                        분쟁 1위</div>
+                                    <div class="flex items-start gap-3">
+                                        <div class="text-2xl mt-1">🍄</div>
+                                        <div>
+                                            <h4 class="font-bold text-slate-800 text-sm mb-1">곰팡이 / 결로</h4>
+                                            <p class="text-xs text-slate-500 leading-relaxed">
+                                                <span class="font-bold text-red-500">지어질 때부터 단열 문제</span>라면 집주인 책임,<br>
+                                                <span class="font-bold text-blue-500">환기 부족</span>이라면 세입자 책임입니다.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Card 2: Options -->
+                                <div
+                                    class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm group hover:border-blue-200 transition-colors">
+                                    <div class="flex items-start gap-3">
+                                        <div class="text-2xl mt-1">📺</div>
+                                        <div>
+                                            <h4 class="font-bold text-slate-800 text-sm mb-1">옵션 가전 (에어컨/냉장고)</h4>
+                                            <p class="text-xs text-slate-500 leading-relaxed">
+                                                <span class="font-bold text-slate-700">노후 고장</span>은 집주인이 수리/교체.<br>
+                                                <span class="font-bold text-slate-700">세입자 과실(파손)</span>은 본인 부담입니다.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Card 3: Damage -->
+                                <div
+                                    class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm group hover:border-blue-200 transition-colors">
+                                    <div class="flex items-start gap-3">
+                                        <div class="text-2xl mt-1">🐶</div>
+                                        <div>
+                                            <h4 class="font-bold text-slate-800 text-sm mb-1">도배 / 장판 / 못질</h4>
+                                            <p class="text-xs text-slate-500 leading-relaxed">
+                                                햇빛 변색은 OK. 단, <span class="font-bold text-slate-700">애완동물 훼손, 흡연, 과도한
+                                                    못질</span>은 퇴실 시 원상복구 필수!
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 2. AI Chatbot -->
+                            <div class="border-t border-slate-100 pt-6">
+                                <div class="bg-slate-50 rounded-2xl border border-slate-200 p-4">
+                                    <!-- Header -->
+                                    <div class="flex items-center gap-2 mb-4">
+                                        <div
+                                            class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm">
+                                            🤖</div>
+                                        <div>
+                                            <h4 class="font-bold text-slate-900 text-sm">AI 수리비 판독기</h4>
+                                            <p class="text-[10px] text-slate-500">무엇이든 물어보세요!</p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Chat Area -->
+                                    <div id="chat-messages"
+                                        class="h-40 overflow-y-auto space-y-3 mb-3 p-1 custom-scrollbar">
+                                        <!-- AI Msg -->
+                                        <div class="flex items-start gap-2">
+                                            <div
+                                                class="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center text-[10px]">
+                                                🤖</div>
+                                            <div
+                                                class="bg-white border border-slate-200 rounded-2xl rounded-tl-none px-3 py-2 text-xs text-slate-600 shadow-sm max-w-[85%]">
+                                                애매한 수리비, 누가 내야 할지 헷갈리시죠?<br>상황을 말씀해주시면 판결해 드릴게요! ⚖️
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Chips -->
+                                    <div class="flex gap-1.5 overflow-x-auto mb-3 pb-1 hide-scrollbar">
+                                        <button onclick="sendChat('태풍으로 창문이 깨졌어')"
+                                            class="whitespace-nowrap bg-white border border-indigo-100 text-indigo-600 px-2.5 py-1.5 rounded-full text-[10px] font-bold hover:bg-indigo-50 transition">☔️
+                                            태풍 창문 파손</button>
+                                        <button onclick="sendChat('보일러가 동파됐어')"
+                                            class="whitespace-nowrap bg-white border border-indigo-100 text-indigo-600 px-2.5 py-1.5 rounded-full text-[10px] font-bold hover:bg-indigo-50 transition">❄️
+                                            보일러 동파</button>
+                                        <button onclick="sendChat('변기가 막혔는데 내 돈으로 해?')"
+                                            class="whitespace-nowrap bg-white border border-indigo-100 text-indigo-600 px-2.5 py-1.5 rounded-full text-[10px] font-bold hover:bg-indigo-50 transition">🚽
+                                            변기 막힘</button>
+                                    </div>
+
+                                    <!-- Input -->
+                                    <div class="relative">
+                                        <input type="text" id="chat-input" placeholder="상황을 입력하세요..."
+                                            class="w-full pl-4 pr-10 py-2.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-indigo-500 transition-colors"
+                                            onkeypress="if(event.key === 'Enter') sendChat(this.value)">
+                                        <button onclick="sendChat(document.getElementById('chat-input').value)"
+                                            class="absolute right-2 top-1/2 -translate-y-1/2 text-indigo-500 hover:text-indigo-700 p-1">
+                                            <i class="fa-solid fa-paper-plane text-xs"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Content: Renewal -->
+                        <div id="panel-renewal" class="p-6 w-full hidden text-center">
+                            <div class="mb-6">
+                                <p class="text-xs text-slate-400 font-bold uppercase mb-1">Expiration Date</p>
+                                <div class="text-4xl font-extrabold text-slate-900 mb-2 font-mono">D-90</div>
+                                <p class="text-sm text-slate-500">계약 만료까지 3개월 남았습니다.</p>
+                            </div>
+
+                            <div class="space-y-3">
+                                <button onclick="resetCycle()"
+                                    class="w-full py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl shadow-lg shadow-red-200 transition-all flex items-center justify-center gap-2">
+                                    <i class="fa-solid fa-truck"></i> 이사 갈래요 (Step 1으로)
+                                </button>
+                                <button
+                                    onclick="alert('① 묵시적 갱신: 만료 2개월 전까지 말 없으면 자동 연장\n② 5% 상한: 갱신 시 보증금 증액은 5% 이내 제한')"
+                                    class="w-full py-3 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition-colors">
+                                    🔄 더 살래요 (갱신)
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- UI Overlay for Copy Toast -->
+    <div id="toast"
+        class="fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white px-6 py-3 rounded-full shadow-2xl opacity-0 transition-opacity pointer-events-none z-50 font-bold text-sm">
+        텍스트가 복사되었습니다!
+    </div>
+
+    <!-- Celebration Modal -->
+    <div id="celebration-modal"
+        class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+        <div
+            class="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl transform transition-all scale-100 animate-fade-in-up">
+            <div class="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce">
+                <span class="text-5xl">🏠</span>
+            </div>
+            <h2 class="text-2xl font-bold text-slate-900 mb-2">축하드립니다! 김세입님 🎉</h2>
+            <p class="text-slate-500 mb-8 leading-relaxed">
+                그동안 정말 고생 많으셨어요.<br>
+                이제 새로운 집에서 행복한 일만 가득하실 거예요!
+            </p>
+            <button onclick="closeModalAndMoveToStep5()"
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-200 transition-all flex items-center justify-center gap-2">
+                🏠 즐거운 거주 생활 시작하기
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. Data Structure ---
+        const STEPS = [
+            { id: 1, mainFlow: true, title: '탐색/검증', icon: 'fa-magnifying-glass', items: [{ id: 's1-1', text: '예산 설정 및 대출 가능도 조회하기' }, { id: 's1-2', text: '부동산 앱으로 매물 리스트업 (3개 이상)' }, { id: 's1-3', text: '등기부등본 열람 및 융자 확인' }, { id: 's1-4', text: '가계약금 입금 및 영수증/문자 보관' }], guide: { title: '등기부등본, 3초 컷 확인법!', desc: "'갑구'의 실제 소유자가 신분증과 일치하는지, '을구'의 채권최고액이 집값의 70%를 넘지 않는지 반드시 확인해야 안전합니다." } },
+            { id: 2, mainFlow: true, title: '계약/확정', icon: 'fa-file-signature', items: [{ id: 's2-1', text: '특약사항(누수, 위반건축물 등) 넣기' }, { id: 's2-2', text: '임대차 계약서 작성 및 날인' }, { id: 's2-3', text: '주민센터/인터넷 등기소에서 확정일자 받기' }, { id: 's2-4', text: '전세자금대출 신청 (확정일자부 계약서 필요)' }], guide: { title: '확정일자, 미루면 큰일나요!', desc: "계약 당일에 바로 받아야 대항력이 가장 빨리 생깁니다. 주민센터 갈 시간이 없다면 '대법원 인터넷 등기소'에서 24시간 신청 가능하니 절대 미루지 마세요." } },
+            { id: 3, mainFlow: true, title: '입주 준비', icon: 'fa-boxes-packing', items: [{ id: 's3-1', text: '이사업체 견적 비교 및 예약' }, { id: 's3-2', text: '입주청소 업체 예약' }, { id: 's3-3', text: '폐가전 무상수거 신청 (폐가전 방문수거)' }, { id: 's3-4', text: '도시가스 전출 예약 (이즈톡/고객센터)' }], guide: { title: '짐 싸기 전, 버리는 게 반!', desc: "이사 견적은 짐 양에 비례합니다. 1년 이상 안 쓴 물건은 과감히 버리세요. 냉장고 파먹기는 이사 2주 전부터 시작하는 것이 국룰입니다." } },
+            { id: 4, mainFlow: true, title: '입주/정산', icon: 'fa-truck-house', items: [{ id: 's4-1', text: '잔금 이체 (이체한도 미리 증액 필수)' }, { id: 's4-2', text: '관리비 정산 및 장기수선충당금 받기' }, { id: 's4-3', text: '전입신고 (정부24 혹은 주민센터)' }, { id: 's4-4', text: '현관 비밀번호 변경 및 와이파이 설치' }], guide: { title: '전입신고는 이사 당일에!', desc: "잔금 치르고 짐 풀자마자 '전입신고'부터 하세요. 그래야 다음날 0시부터 보증금을 지키는 대항력이 생깁니다." } },
+            { id: 5, mainFlow: false, title: '거주/갱신', icon: 'fa-house-user', items: [{ id: 's5-1', text: '[수리] 집주인 부담 vs 세입자 부담 확인하기' }, { id: 's5-2', text: '[행정] 전입신고/확정일자 서류 잘 보관하기' }, { id: 's5-3', text: '[만기] 계약 만료 3개월 전 통보 알림 설정' }, { id: 's5-4', text: '[갱신] 묵시적 갱신 여부 체크' }], guide: null } // items managed via tab logic
+        ];
+
+        let currentStepId = 2;
+        let completedItems = new Set();
+        let celebrationShown = false;
+        let isStep5Unlocked = false;
+
+        // Load State
+        const savedData = localStorage.getItem('tenant_guide_progress');
+        const savedUnlock = localStorage.getItem('tenant_guide_step5_unlocked');
+
+        if (savedData) {
+            completedItems = new Set(JSON.parse(savedData));
+        }
+        if (savedUnlock) {
+            isStep5Unlocked = JSON.parse(savedUnlock);
+        }
+
+        // --- Render ---
+        function render() {
+            renderHero();
+            renderStepNav();
+            renderChecklist();
+            renderRightPanel();
+        }
+
+        function renderHero() {
+            // Updated Logic: Only count mainFlow (Step 1-4)
+            const mainSteps = STEPS.filter(s => s.mainFlow);
+            const totalItems = mainSteps.reduce((acc, step) => acc + step.items.length, 0);
+
+            // Count completed items ONLY within Main Flow
+            const doneCount = mainSteps
+                .flatMap(s => s.items)
+                .filter(item => completedItems.has(item.id))
+                .length;
+
+            const percent = totalItems === 0 ? 0 : Math.round((doneCount / totalItems) * 100);
+
+            document.getElementById('total-progress-bar').style.width = `${percent}%`;
+            document.getElementById('total-progress-text').innerText = `${percent}%`;
+            document.getElementById('completed-count').innerText = doneCount;
+            document.getElementById('total-count').innerText = totalItems;
+        }
+
+        function renderStepNav() {
+            const container = document.getElementById('step-nav');
+            container.innerHTML = STEPS.map(step => {
+                // If it's Step 5 and NOT unlocked, hide it completely
+                if (step.id === 5 && !isStep5Unlocked) return '';
+
+                const isActive = step.id === currentStepId;
+
+                // Completion Check
+                let isStepCompleted;
+                if (step.id === 5) {
+                    isStepCompleted = false; // Step 5 logic
+                } else {
+                    isStepCompleted = step.items.every(item => completedItems.has(item.id));
+                }
+
+                const stateClass = isActive ? 'active' : (isStepCompleted ? 'completed' : '');
+
+                let iconEl = `<i class="fa-solid ${step.icon}"></i>`;
+                if (!isActive && isStepCompleted) iconEl = `<i class="fa-solid fa-check"></i>`;
+
+                return `
+                <div class="step-item relative flex flex-col items-center gap-2 cursor-pointer group shrink-0 ${stateClass} animate-fade-in-up" onclick="switchStep(${step.id})" style="min-width: 80px;">
+                    <div class="step-circle w-10 h-10 md:w-14 md:h-14 bg-white border-4 border-slate-200 rounded-full flex items-center justify-center text-slate-400 group-hover:border-blue-300 transition-all shadow-sm z-10 text-sm md:text-xl">
+                        ${iconEl}
+                    </div>
+                    <span class="step-title text-[10px] md:text-sm font-bold text-slate-400 group-hover:text-slate-600 transition-colors whitespace-nowrap">${step.title}</span>
+                </div>
+                `;
+            }).join('');
+        }
+
+        function renderChecklist() {
+            const step = STEPS.find(s => s.id === currentStepId);
+            document.getElementById('active-step-title').innerText = `Step ${step.id}. ${step.title}`;
+
+            const list = document.getElementById('checklist-container');
+            list.innerHTML = step.items.map(item => {
+                const isChecked = completedItems.has(item.id);
+                return `
+                <div class="todo-item bg-white p-4 rounded-xl border border-slate-200 flex items-center gap-4 transition-all duration-200">
+                    <div class="relative flex items-center">
+                        <input type="checkbox" id="${item.id}" class="custom-checkbox sr-only" 
+                            ${isChecked ? 'checked' : ''} onchange="toggleItem('${item.id}')">
+                        <label for="${item.id}" class="w-6 h-6 border-2 border-slate-300 rounded-lg cursor-pointer flex items-center justify-center hover:border-blue-400 text-transparent transition-colors">
+                            <i class="fa-solid fa-check text-xs font-bold check-icon opacity-0 transition-opacity text-blue-600"></i>
+                        </label>
+                    </div>
+                    <label for="${item.id}" class="flex-1 cursor-pointer font-medium text-slate-700 select-none check-text transition-all ${isChecked ? 'line-through text-slate-400' : ''}">
+                        ${item.text}
+                    </label>
+                </div>
+                `;
+            }).join('');
+        }
+
+        function renderRightPanel() {
+            const guideCard = document.getElementById('guide-card');
+            const step5UI = document.getElementById('step5-ui');
+            const step = STEPS.find(s => s.id === currentStepId);
+
+            if (currentStepId === 5) {
+                guideCard.classList.add('hidden');
+                step5UI.classList.remove('hidden');
+                switchStep5Tab('maintenance');
+            } else {
+                step5UI.classList.add('hidden');
+                guideCard.classList.remove('hidden');
+                document.getElementById('guide-title').innerText = `💡 ${step.guide.title}`;
+                document.getElementById('guide-desc').innerText = step.guide.desc;
+            }
+        }
+
+        // --- Logic ---
+        function toggleItem(id) {
+            if (completedItems.has(id)) completedItems.delete(id);
+            else completedItems.add(id);
+            saveState();
+            render();
+            checkCelebrationTrigger();
+        }
+
+        function checkCelebrationTrigger() {
+            // Check if Main Flow (Steps 1 ~ 4) is ALL complete
+            const mainSteps = STEPS.filter(s => s.mainFlow);
+            const totalItems = mainSteps.reduce((acc, step) => acc + step.items.length, 0);
+
+            const doneCount = mainSteps
+                .flatMap(s => s.items)
+                .filter(item => completedItems.has(item.id))
+                .length;
+
+            const isAllDone = totalItems > 0 && doneCount === totalItems;
+
+            if (isAllDone && !celebrationShown && !isStep5Unlocked) {
+                celebrationShown = true;
+                showCelebration();
+            }
+        }
+
+        function showCelebration() {
+            const modal = document.getElementById('celebration-modal');
+            modal.classList.remove('hidden');
+
+            confetti({
+                particleCount: 150,
+                spread: 70,
+                origin: { y: 0.6 }
+            });
+
+            setTimeout(() => {
+                confetti({
+                    particleCount: 100,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 }
+                });
+                confetti({
+                    particleCount: 100,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 }
+                });
+            }, 500);
+        }
+
+        function closeModalAndMoveToStep5() {
+            document.getElementById('celebration-modal').classList.add('hidden');
+
+            // Unlock Step 5
+            isStep5Unlocked = true;
+            localStorage.setItem('tenant_guide_step5_unlocked', JSON.stringify(true));
+
+            // Render first to show the tab, then switch
+            render();
+            switchStep(5);
+        }
+
+        function switchStep(id) {
+            currentStepId = id;
+            render();
+        }
+
+        function resetCurrentStep() {
+            if (!confirm('현재 단계의 체크리스트를 모두 초기화하시겠습니까?')) return;
+            const step = STEPS.find(s => s.id === currentStepId);
+            step.items.forEach(item => completedItems.delete(item.id));
+            saveState();
+            render();
+        }
+
+        function switchStep5Tab(tab) {
+            const btnM = document.getElementById('tab-maintenance');
+            const btnR = document.getElementById('tab-renewal');
+            const pM = document.getElementById('panel-maintenance');
+            const pR = document.getElementById('panel-renewal');
+
+            if (tab === 'maintenance') {
+                btnM.classList.add('active', 'text-blue-600', 'border-b-blue-600');
+                btnR.classList.remove('active', 'text-blue-600', 'border-b-blue-600');
+                pM.classList.remove('hidden');
+                pR.classList.add('hidden');
+            } else {
+                btnR.classList.add('active', 'text-blue-600', 'border-b-blue-600');
+                btnM.classList.remove('active', 'text-blue-600', 'border-b-blue-600');
+                pR.classList.remove('hidden');
+                pM.classList.add('hidden');
+            }
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                const toast = document.getElementById('toast');
+                toast.style.opacity = '1';
+                setTimeout(() => toast.style.opacity = '0', 2000);
+            });
+        }
+
+        function resetCycle() {
+            if (confirm('🎉 정말 이사를 가시나요? \n새로운 집을 찾기 위해 체크리스트를 초기화하고 Step 1으로 돌아갑니다.')) {
+                localStorage.removeItem('tenant_guide_progress');
+                localStorage.removeItem('tenant_guide_step5_unlocked');
+                location.reload();
+            }
+        }
+
+        function toggleDDayMode() {
+            const el = document.getElementById('d-day-text');
+            if (el.innerText.includes('D-20')) el.innerText = 'D-90 (만기)';
+            else el.innerText = '입주까지 D-20';
+        }
+
+        function saveState() {
+            localStorage.setItem('tenant_guide_progress', JSON.stringify([...completedItems]));
+        }
+
+        // --- Chatbot Logic ---
+        function sendChat(msg) {
+            if (!msg.trim()) return;
+
+            const chatBox = document.getElementById('chat-messages');
+            const input = document.getElementById('chat-input');
+
+            // 1. User Message
+            const userMsg = document.createElement('div');
+            userMsg.className = 'flex justify-end';
+            userMsg.innerHTML = `
+                <div class="bg-indigo-600 text-white rounded-2xl rounded-tr-none px-3 py-2 text-xs shadow-sm max-w-[85%]">
+                    ${msg}
+                </div>
+            `;
+            chatBox.appendChild(userMsg);
+            chatBox.scrollTop = chatBox.scrollHeight;
+            input.value = '';
+
+            // 2. AI Response (Mock)
+            setTimeout(() => {
+                let reply = '';
+                if (msg.includes('변기') || msg.includes('막힘')) {
+                    reply = "변기 배관 자체의 노후나 정화조 문제라면 <span class='font-bold text-indigo-600'>'임대인'</span> 책임입니다.<br>하지만 칫솔, 물티슈 등 이물질 투입으로 인한 막힘은 <span class='font-bold text-indigo-600'>'임차인'</span> 부담입니다. 전문가 소견이 중요해요!";
+                } else if (msg.includes('태풍') || msg.includes('창문')) {
+                    reply = "<span class='font-bold text-indigo-600'>천재지변(태풍, 지진)</span>으로 인한 파손은 <span class='font-bold text-indigo-600'>'임대인'</span>이 수리해야 합니다. 단, 창문을 열어두어 파손된 경우 임차인 과실이 일부 인정될 수 있어요.";
+                } else if (msg.includes('보일러') || msg.includes('동파')) {
+                    reply = "보일러 노후로 인한 동파는 <span class='font-bold text-indigo-600'>'임대인'</span> 책임이지만, 한파 주의보에도 보일러를 끄고 외출해 동파됐다면 <span class='font-bold text-indigo-600'>'임차인'</span>에게 관리 소홀 책임이 있습니다.";
+                } else {
+                    reply = "음, 그 상황은 조금 복잡하네요. <br>대체로 <span class='font-bold text-indigo-600'>노후/구조적 문제</span>는 집주인, <span class='font-bold text-indigo-600'>사용상 부주의</span>는 세입자 책임입니다. 계약서의 특약사항을 한번 확인해보세요!";
+                }
+
+                const aiMsg = document.createElement('div');
+                aiMsg.className = 'flex items-start gap-2 animate-fade-in-up';
+                aiMsg.innerHTML = `
+                    <div class="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center text-[10px] shrink-0">🤖</div>
+                    <div class="bg-white border border-slate-200 rounded-2xl rounded-tl-none px-3 py-2 text-xs text-slate-600 shadow-sm max-w-[85%]">
+                        ${reply}
+                    </div>
+                `;
+                chatBox.appendChild(aiMsg);
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }, 1000);
+        }
+
+        document.addEventListener('DOMContentLoaded', render);
+    </script>
+    <!-- Global Footer -->
+    <footer class="bg-gray-900 border-t border-gray-800 text-gray-400 py-12">
+        <div class="max-w-screen-xl mx-auto px-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div class="space-y-4">
+                    <h3 class="text-2xl font-bold text-white">Tenant Note</h3>
+                    <p class="text-sm">세입자의 권리를 지킵니다.<br>안전한 주거 경험을 위한 필수 가이드.</p>
+                </div>
+                <div class="space-y-4">
+                    <h4 class="text-lg font-bold text-white">서비스</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#" class="hover:text-blue-500 transition">서비스 소개</a></li>
+                        <li><a href="#" class="hover:text-blue-500 transition">이용약관</a></li>
+                        <li><a href="#" class="hover:text-blue-500 transition">개인정보처리방침</a></li>
+                        <li><a href="#" class="hover:text-blue-500 transition">자주 묻는 질문</a></li>
+                    </ul>
+                </div>
+                <div class="space-y-4">
+                    <h4 class="text-lg font-bold text-white">문의</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><i class="fa-regular fa-envelope mr-2"></i> support@tenantnote.com</li>
+                        <li><i class="fa-regular fa-handshake mr-2"></i> partner@tenantnote.com</li>
+                    </ul>
+                </div>
+                <div class="space-y-4">
+                    <h4 class="text-lg font-bold text-white">소셜</h4>
+                    <div class="flex gap-4">
+                        <a href="#"
+                            class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-blue-600 hover:text-white transition"><i
+                                class="fa-brands fa-instagram text-xl"></i></a>
+                        <a href="#"
+                            class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-red-600 hover:text-white transition"><i
+                                class="fa-brands fa-youtube text-xl"></i></a>
+                        <a href="#"
+                            class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-green-600 hover:text-white transition"><i
+                                class="fa-solid fa-blog text-xl"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-12 pt-8 text-center text-xs">
+                <p>&copy; 2026 Tenant Note. All rights reserved. (Designed by Vibe Coding)</p>
+            </div>
+        </div>
+    </footer>
+    <!-- Global Review Write Modal -->
+    <div id="review-modal"
+        class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[150] hidden flex items-end md:items-center justify-center">
+        <div class="bg-white w-full max-w-lg rounded-t-3xl md:rounded-3xl p-6 shadow-2xl animate-fade-in-up">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-slate-900">살아본 집의 찐후기를 들려주세요!</h3>
+                <button onclick="document.getElementById('review-modal').classList.add('hidden')"
+                    class="text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-xmark text-2xl"></i>
+                </button>
+            </div>
+
+            <div class="space-y-4">
+                <!-- 1. Address Search -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">어디에 사셨나요?</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-slate-400"></i>
+                        <input type="text" placeholder="도로명 주소나 건물명 검색"
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-sm font-bold outline-none focus:border-blue-500 transition-colors">
+                    </div>
+                </div>
+
+                <!-- 2. Period -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">거주 기간</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <select
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-blue-500">
+                            <option>2024년</option>
+                            <option>2023년</option>
+                            <option>2022년</option>
+                            <option>2021년 이전</option>
+                        </select>
+                        <select
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-blue-500">
+                            <option>1년 미만</option>
+                            <option>1년</option>
+                            <option>2년 이상</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 3. Rating -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">이 집의 총점은?</label>
+                    <div class="flex gap-2 justify-center py-4 bg-slate-50 rounded-xl border border-slate-200">
+                        <i class="fa-solid fa-star text-3xl text-gray-300 cursor-pointer hover:text-yellow-400"
+                            onclick="this.classList.toggle('text-yellow-400'); this.classList.toggle('text-gray-300')"></i>
+                        <i class="fa-solid fa-star text-3xl text-gray-300 cursor-pointer hover:text-yellow-400"
+                            onclick="this.classList.toggle('text-yellow-400'); this.classList.toggle('text-gray-300')"></i>
+                        <i class="fa-solid fa-star text-3xl text-gray-300 cursor-pointer hover:text-yellow-400"
+                            onclick="this.classList.toggle('text-yellow-400'); this.classList.toggle('text-gray-300')"></i>
+                        <i class="fa-solid fa-star text-3xl text-gray-300 cursor-pointer hover:text-yellow-400"
+                            onclick="this.classList.toggle('text-yellow-400'); this.classList.toggle('text-gray-300')"></i>
+                        <i class="fa-solid fa-star text-3xl text-gray-300 cursor-pointer hover:text-yellow-400"
+                            onclick="this.classList.toggle('text-yellow-400'); this.classList.toggle('text-gray-300')"></i>
+                    </div>
+                </div>
+
+                <!-- 4. Pros/Cons -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-blue-600 mb-1">장점</label>
+                        <textarea
+                            class="w-full h-24 bg-blue-50/50 border border-blue-100 rounded-xl p-3 text-sm resize-none outline-none focus:border-blue-500"
+                            placeholder="채광, 치안, 교통 등 만족스러운 점"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-red-500 mb-1">단점</label>
+                        <textarea
+                            class="w-full h-24 bg-red-50/50 border border-red-100 rounded-xl p-3 text-sm resize-none outline-none focus:border-red-500"
+                            placeholder="소음, 벌레, 곰팡이 등 아쉬운 점"></textarea>
+                    </div>
+                </div>
+
+                <button
+                    onclick="alert('소중한 후기 감사합니다! 500P가 적립되었습니다.'); document.getElementById('review-modal').classList.add('hidden')"
+                    class="w-full bg-slate-900 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-slate-800 transition-all transform hover:scale-[1.02]">
+                    등록하고 포인트 받기 💰
+                </button>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

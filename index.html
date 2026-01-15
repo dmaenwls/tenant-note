@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tenant Note | 세입자를 위한 안전 지킴이</title>
+    <meta name="description" content="등기부등본 분석부터 실거주 찐후기까지. 2030 전월세 계약의 모든 것.">
+    <meta property="og:title" content="Tenant Note - 내 보증금 지키는 가장 쉬운 방법">
+    <meta property="og:description" content="현직 감정평가사가 만든 전월세 안전 진단 & 가이드">
+    <meta property="og:image" content="https://via.placeholder.com/1200x630/2563eb/ffffff?text=Tenant+Note">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" as="style" crossorigin
+        href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <style>
+        body {
+            font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+        }
+
+        /* Mobile Horizontal Scroll Snap & Hide Scrollbar */
+        .snap-x-mandatory {
+            scroll-snap-type: x mandatory;
+        }
+
+        .snap-center {
+            scroll-snap-align: center;
+        }
+
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+    <script src="js/config.js"></script>
+</head>
+
+<body class="bg-slate-50 text-slate-900">
+
+    <!-- 1. Header (GNB) -->
+    <header class="sticky top-0 z-50 w-full border-b border-gray-200 bg-white/95 backdrop-blur-md">
+        <div class="mx-auto flex h-24 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+            <a href="index.html" class="flex flex-col leading-none group">
+                <div class="flex items-center gap-1.5">
+                    <span
+                        class="text-2xl font-black text-blue-600 tracking-tight group-hover:scale-105 transition-transform">Tenant
+                        Note</span>
+                    <span class="rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-bold text-blue-700">Beta</span>
+                </div>
+                <span class="text-xs font-medium text-gray-400 mt-1.5 tracking-wide">세입자를 위한 안전 지킴이</span>
+            </a>
+
+            <nav class="hidden md:flex items-center gap-10">
+                <a href="reviews.html" class="group flex flex-col items-center justify-center gap-1 py-2">
+                    <span class="text-lg font-bold text-gray-800 transition group-hover:text-blue-600">동네 분석</span>
+                    <span class="text-xs font-medium text-gray-500 transition group-hover:text-blue-500">여기 살기
+                        어때요?</span>
+                </a>
+                <a href="safety.html" class="group flex flex-col items-center justify-center gap-1 py-2">
+                    <span class="text-lg font-bold text-gray-800 transition group-hover:text-blue-600">물건 분석</span>
+                    <span class="text-xs font-medium text-gray-500 transition group-hover:text-blue-500">여기 계약해도
+                        될까?</span>
+                </a>
+                <a href="guide.html" class="group flex flex-col items-center justify-center gap-1 py-2">
+                    <span class="text-lg font-bold text-gray-800 transition group-hover:text-blue-600">계약/이사 가이드</span>
+                    <span class="text-xs font-medium text-gray-500 transition group-hover:text-blue-500">이제 뭘 해야
+                        하지?</span>
+                </a>
+                <a href="community.html" class="group flex flex-col items-center justify-center gap-1 py-2">
+                    <span class="text-lg font-bold text-gray-800 transition group-hover:text-blue-600">테넌트 라운지</span>
+                    <span class="text-xs font-medium text-gray-500 transition group-hover:text-blue-500">나랑 같은 고민
+                        상담</span>
+                </a>
+                <a href="insight.html" class="group flex flex-col items-center justify-center gap-1 py-2">
+                    <span class="text-lg font-bold text-gray-800 transition group-hover:text-blue-600">인사이트</span>
+                    <span class="text-xs font-medium text-gray-500 transition group-hover:text-blue-500">전문가의
+                        팩트체크</span>
+                </a>
+            </nav>
+
+            <div class="hidden md:flex items-center gap-4">
+                <button class="text-base font-semibold text-gray-500 hover:text-gray-900 transition">로그인</button>
+                <a href="#" onclick="document.getElementById('review-modal').classList.remove('hidden'); return false;"
+                    class="rounded-xl bg-blue-600 px-5 py-2.5 text-base font-bold text-white shadow-lg hover:bg-blue-500 transition hover:-translate-y-0.5">
+                    후기 남기기
+                </a>
+            </div>
+
+            <button id="mobile-menu-btn" class="md:hidden p-2 text-gray-600 hover:text-blue-600 focus:outline-none">
+                <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16">
+                    </path>
+                </svg>
+            </button>
+        </div>
+
+        <div id="mobile-menu" class="hidden md:hidden border-t border-gray-100 bg-white">
+            <div class="space-y-1 px-4 py-6">
+                <a href="reviews.html"
+                    class="block rounded-lg px-4 py-3 text-base font-bold text-gray-800 hover:bg-blue-50 hover:text-blue-600">
+                    동네 분석 <span class="ml-2 text-xs font-normal text-gray-500">여기 살기 어때요?</span>
+                </a>
+                <a href="safety.html"
+                    class="block rounded-lg px-4 py-3 text-base font-bold text-gray-800 hover:bg-blue-50 hover:text-blue-600">
+                    물건 분석 <span class="ml-2 text-xs font-normal text-gray-500">여기 계약해도 될까?</span>
+                </a>
+                <a href="guide.html"
+                    class="block rounded-lg px-4 py-3 text-base font-bold text-gray-800 hover:bg-blue-50 hover:text-blue-600">
+                    계약/이사 가이드 <span class="ml-2 text-xs font-normal text-gray-500">이제 뭘 해야 하지?</span>
+                </a>
+                <a href="community.html"
+                    class="block rounded-lg px-4 py-3 text-base font-bold text-gray-800 hover:bg-blue-50 hover:text-blue-600">
+                    테넌트 라운지 <span class="ml-2 text-xs font-normal text-gray-500">나랑 같은 고민 상담</span>
+                </a>
+                <a href="insight.html"
+                    class="block rounded-lg px-4 py-3 text-base font-bold text-gray-800 hover:bg-blue-50 hover:text-blue-600">
+                    인사이트 <span class="ml-2 text-xs font-normal text-gray-500">전문가의 팩트체크</span>
+                </a>
+
+                <div class="mt-6 border-t border-gray-100 pt-6">
+                    <a href="#"
+                        class="block w-full rounded-lg bg-gray-100 px-4 py-3 text-center text-base font-bold text-gray-600 hover:bg-gray-200">
+                        로그인
+                    </a>
+                    <a href="#"
+                        onclick="document.getElementById('review-modal').classList.remove('hidden'); return false;"
+                        class="mt-3 block w-full rounded-lg bg-blue-600 px-4 py-3 text-center text-base font-bold text-white hover:bg-blue-500">
+                        후기 남기기
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            const btn = document.getElementById('mobile-menu-btn');
+            const menu = document.getElementById('mobile-menu');
+            btn.addEventListener('click', () => {
+                menu.classList.toggle('hidden');
+            });
+        </script>
+    </header>
+
+    <!-- 2. Hero Section -->
+    <section class="bg-slate-900 text-white pt-24 pb-32 px-4 relative overflow-hidden">
+        <div class="container mx-auto text-center relative z-10">
+            <h1 class="text-3xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+                부동산 사장님은<br class="md:hidden" /> 절대 말 안 해주는<br />
+                <span class="text-blue-400">그 집 이야기</span>
+            </h1>
+            <p class="text-slate-400 text-lg md:text-xl mb-12 max-w-2xl mx-auto break-keep">
+                등기부등본엔 없는 곰팡이, 벌레, 층간소음...<br />
+                먼저 살아본 선배들의 비밀 노트를 훔쳐보세요.
+            </p>
+
+            <div class="max-w-2xl mx-auto">
+                <div class="relative">
+                    <input type="text" id="hero-search-input" placeholder="지역명, 건물명으로 찐후기 검색"
+                        class="w-full p-5 pl-6 outline-none text-slate-900 text-lg placeholder:text-slate-400 bg-white rounded-2xl shadow-2xl focus:ring-4 focus:ring-blue-500/30 transition-all">
+                    <button id="hero-search-btn"
+                        class="absolute right-2 top-2 bottom-2 bg-slate-900 hover:bg-slate-800 text-white px-6 rounded-xl font-bold transition-colors hidden sm:block">
+                        검색
+                    </button>
+                </div>
+            </div>
+
+            <!-- Viral Game Banner -->
+            <a href="game.html"
+                class="block mt-8 transform hover:scale-105 transition-transform duration-300 animate-float">
+                <div class="bg-gradient-to-r from-violet-600 to-pink-500 rounded-2xl p-1 p-[2px] shadow-2xl">
+                    <div
+                        class="bg-slate-900/90 hover:bg-slate-900/80 backdrop-blur-sm rounded-xl px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 transition-colors">
+                        <div class="text-left">
+                            <span
+                                class="bg-clip-text text-transparent bg-gradient-to-r from-violet-200 to-pink-200 font-bold text-xs uppercase tracking-wider mb-1 block">
+                                New • 밸런스 게임
+                            </span>
+                            <h3 class="text-white font-bold text-lg md:text-xl leading-tight">
+                                🤷‍♀️ <span class="text-yellow-300">월세 낼 돈으로 차라리...</span><br class="md:hidden"> 내 주거
+                                성향은 무슨 타입일까?
+                            </h3>
+                        </div>
+                        <div
+                            class="bg-white text-violet-600 px-5 py-2.5 rounded-full font-bold text-sm shrink-0 shadow-lg flex items-center gap-2 group">
+                            3분 만에 테스트하기
+                            <i
+                                class="fa-solid fa-chevron-right text-xs group-hover:translate-x-1 transition-transform"></i>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <style>
+            @keyframes float {
+                0% {
+                    transform: translateY(0px);
+                }
+
+                50% {
+                    transform: translateY(-10px);
+                }
+
+                100% {
+                    transform: translateY(0px);
+                }
+            }
+
+            .animate-float {
+                animation: float 3s ease-in-out infinite;
+            }
+        </style>
+        </div>
+    </section>
+
+    <!-- 2.5 Quick Service Cards -->
+    <section class="py-10 bg-slate-50 border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <!-- 1. Reviews -->
+                <a href="reviews.html"
+                    class="bg-white p-6 rounded-xl shadow-sm hover:shadow-md hover:-translate-y-1 transition-all flex flex-col items-center justify-center gap-3 group text-center border border-slate-100">
+                    <div
+                        class="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-2xl group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                        <i class="fa-solid fa-map-location-dot"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-900">동네 분석</h3>
+                        <p class="text-xs text-slate-500 mt-1 font-medium">살아본 사람만 아는<br>진실</p>
+                    </div>
+                </a>
+
+                <!-- 2. Safety -->
+                <a href="safety.html"
+                    class="bg-white p-6 rounded-xl shadow-sm hover:shadow-md hover:-translate-y-1 transition-all flex flex-col items-center justify-center gap-3 group text-center border border-slate-100">
+                    <div
+                        class="w-12 h-12 bg-green-50 text-green-600 rounded-full flex items-center justify-center text-2xl group-hover:bg-green-600 group-hover:text-white transition-colors">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-900">물건 분석</h3>
+                        <p class="text-xs text-slate-500 mt-1 font-medium">계약할 부동산<br>3초 무료 분석</p>
+                    </div>
+                </a>
+
+                <!-- 3. Guide -->
+                <a href="guide.html"
+                    class="bg-white p-6 rounded-xl shadow-sm hover:shadow-md hover:-translate-y-1 transition-all flex flex-col items-center justify-center gap-3 group text-center border border-slate-100">
+                    <div
+                        class="w-12 h-12 bg-purple-50 text-purple-600 rounded-full flex items-center justify-center text-2xl group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                        <i class="fa-solid fa-calendar-check"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-900">계약/이사 가이드</h3>
+                        <p class="text-xs text-slate-500 mt-1 font-medium">계약~입주<br>D-Day 관리</p>
+                    </div>
+                </a>
+
+                <!-- 4. Community -->
+                <a href="community.html"
+                    class="bg-white p-6 rounded-xl shadow-sm hover:shadow-md hover:-translate-y-1 transition-all flex flex-col items-center justify-center gap-3 group text-center border border-slate-100">
+                    <div
+                        class="w-12 h-12 bg-orange-50 text-orange-600 rounded-full flex items-center justify-center text-2xl group-hover:bg-orange-600 group-hover:text-white transition-colors">
+                        <i class="fa-solid fa-comments"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-900">테넌트 라운지</h3>
+                        <p class="text-xs text-slate-500 mt-1 font-medium">실거주자들의<br>찐 소통 공간</p>
+                    </div>
+                </a>
+
+                <!-- 5. Insight -->
+                <a href="insight.html"
+                    class="bg-white p-6 rounded-xl shadow-sm hover:shadow-md hover:-translate-y-1 transition-all flex flex-col items-center justify-center gap-3 group text-center border border-slate-100">
+                    <div
+                        class="w-12 h-12 bg-slate-100 text-slate-700 rounded-full flex items-center justify-center text-2xl group-hover:bg-slate-700 group-hover:text-white transition-colors">
+                        <i class="fa-solid fa-pen-nib"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-900">인사이트</h3>
+                        <p class="text-xs text-slate-500 mt-1 font-medium">감정평가사의<br>부동산 칼럼</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. Section A: Real Reviews (Horizontal Scroll on Mobile) -->
+    <section class="py-20 bg-white">
+        <div class="container mx-auto px-4">
+            <div class="flex items-end justify-between mb-8 md:mb-12">
+                <div>
+                    <h2 class="text-2xl md:text-3xl font-bold text-slate-900 mb-2">광고 없는 100% 실거주자 인증 후기</h2>
+                    <p class="text-slate-500">솔직해서 더 믿음직한 우리 동네 이야기</p>
+                </div>
+                <!-- Controls for PC -->
+                <div class="hidden md:flex gap-2">
+                    <button id="review-prev"
+                        class="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center hover:bg-slate-50 transition-colors">←</button>
+                    <button id="review-next"
+                        class="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center hover:bg-slate-50 transition-colors">→</button>
+                </div>
+            </div>
+
+            <!-- Scroll Container -->
+            <!-- scrollbar-hide util might need custom css if not configured in tailwind -->
+            <style>
+                .scrollbar-hide::-webkit-scrollbar {
+                    display: none;
+                }
+
+                .scrollbar-hide {
+                    -ms-overflow-style: none;
+                    scrollbar-width: none;
+                }
+            </style>
+            <div id="review-container"
+                class="flex gap-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-4 -mx-4 px-4 md:mx-0 md:px-0">
+                <!-- Data will be injected via JS -->
+            </div>
+
+
+        </div>
+        </div>
+    </section>
+
+    <!-- 4. Section B: Moving Process Timeline -->
+    <section class="py-24 bg-slate-50 border-t border-slate-200">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-16">
+                <span
+                    class="text-blue-600 font-bold tracking-widest text-xs uppercase mb-2 block animate-fade-in-up">Process
+                    Guide</span>
+                <h2 class="text-3xl md:text-4xl font-bold text-slate-900 animate-fade-in-up delay-75">
+                    복잡한 계약부터 이사까지, <span class="text-blue-600">단계별로 떠먹여 드립니다</span>
+                </h2>
+                <p class="text-slate-500 mt-4 animate-fade-in-up delay-100">처음이라 막막한 이사 준비, 테넌트 노트가 로드맵을 그려드릴게요.</p>
+            </div>
+
+            <div class="relative max-w-6xl mx-auto">
+                <!-- PC: Desktop Timeline Line (Absolute) -->
+                <div
+                    class="hidden md:block absolute top-[2.5rem] left-0 w-full h-1 bg-gradient-to-r from-blue-100 via-blue-200 to-blue-100 -z-10 rounded-full">
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-4">
+
+                    <!-- Step 1 -->
+                    <div class="relative group">
+                        <!-- Mobile Line -->
+                        <div
+                            class="md:hidden absolute left-[1.65rem] top-12 bottom-0 w-0.5 bg-slate-200 -z-10 h-[calc(100%+2rem)]">
+                        </div>
+
+                        <div
+                            class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 relative z-10 flex md:block items-start gap-4 md:gap-0">
+                            <!-- Icon -->
+                            <div
+                                class="w-14 h-14 rounded-full bg-blue-600 border-4 border-white shadow-md flex items-center justify-center text-2xl text-white mb-0 md:mb-6 shrink-0 group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                            </div>
+
+                            <div class="flex-1">
+                                <span
+                                    class="bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-1 rounded inline-block mb-2">STEP
+                                    1</span>
+                                <h3 class="font-bold text-xl text-slate-900 mb-4">탐색 & 검증 (Search)</h3>
+                                <ul class="space-y-2.5">
+                                    <li class="flex items-center gap-2 text-sm text-slate-600">
+                                        <i class="fa-solid fa-check text-blue-500 text-xs"></i> 예산 및 대출 정보 확인
+                                    </li>
+                                    <li class="flex items-center gap-2 text-sm text-slate-600">
+                                        <i class="fa-solid fa-check text-blue-500 text-xs"></i> 등기부/건축물대장 확인
+                                    </li>
+                                    <li class="flex items-center gap-2 text-sm text-slate-600">
+                                        <i class="fa-solid fa-check text-blue-500 text-xs"></i> 깡통전세/보증보험 여부
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2 -->
+                    <div class="relative group">
+                        <!-- Mobile Line -->
+                        <div
+                            class="md:hidden absolute left-[1.65rem] top-12 bottom-0 w-0.5 bg-slate-200 -z-10 h-[calc(100%+2rem)]">
+                        </div>
+
+                        <div
+                            class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 relative z-10 flex md:block items-start gap-4 md:gap-0">
+                            <div
+                                class="w-14 h-14 rounded-full bg-white border-4 border-slate-200 shadow-md flex items-center justify-center text-xl text-slate-400 mb-0 md:mb-6 shrink-0 group-hover:border-blue-300 transition-colors">
+                                <i class="fa-solid fa-file-signature"></i>
+                            </div>
+                            <div class="flex-1">
+                                <span
+                                    class="bg-slate-100 text-slate-500 text-[10px] font-bold px-2 py-1 rounded inline-block mb-2 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">STEP
+                                    2</span>
+                                <h3 class="font-bold text-xl text-slate-900 mb-4">계약 & 확정 (Contract)</h3>
+                                <ul class="space-y-2.5">
+                                    <li class="flex items-center gap-2 text-sm text-slate-600">
+                                        <i class="fa-solid fa-check text-blue-500 text-xs"></i> 임대인 본인 확인 (신분증)
+                                    </li>
+                                    <li class="flex items-center gap-2 text-sm text-slate-600">
+                                        <i class="fa-solid fa-check text-blue-500 text-xs"></i> 필수 특약사항 삽입
+                                    </li>
+                                    <li class="flex items-center gap-2 text-sm text-slate-600">
+                                        <i class="fa-solid fa-check text-blue-500 text-xs"></i> 확정일자 받기/신고
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 3 -->
+                    <div class="relative group">
+                        <!-- Mobile Line -->
+                        <div
+                            class="md:hidden absolute left-[1.65rem] top-12 bottom-0 w-0.5 bg-slate-200 -z-10 h-[calc(100%+2rem)]">
+                        </div>
+
+                        <div
+                            class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 relative z-10 flex md:block items-start gap-4 md:gap-0">
+                            <div
+                                class="w-14 h-14 rounded-full bg-white border-4 border-slate-200 shadow-md flex items-center justify-center text-xl text-slate-400 mb-0 md:mb-6 shrink-0 group-hover:border-blue-300 transition-colors">
+                                <i class="fa-solid fa-boxes-packing"></i>
+                            </div>
+                            <div class="flex-1">
+                                <span
+                                    class="bg-slate-100 text-slate-500 text-[10px] font-bold px-2 py-1 rounded inline-block mb-2 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">STEP
+                                    3</span>
+                                <h3 class="font-bold text-xl text-slate-900 mb-4">입주 준비 (Prepare)</h3>
+                                <ul class="space-y-2.5">
+                                    <li class="flex items-center gap-2 text-sm text-slate-600">
+                                        <i class="fa-solid fa-check text-blue-500 text-xs"></i> 이사업체 예약
+                                    </li>
+                                    <li class="flex items-center gap-2 text-sm text-slate-600">
+                                        <i class="fa-solid fa-check text-blue-500 text-xs"></i> 폐가전 신고
+                                    </li>
+                                    <li class="flex items-center gap-2 text-sm text-slate-600">
+                                        <i class="fa-solid fa-check text-blue-500 text-xs"></i> 공과금 정산 예약
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 4 -->
+                    <div class="relative group">
+                        <div
+                            class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 relative z-10 flex md:block items-start gap-4 md:gap-0">
+                            <div
+                                class="w-14 h-14 rounded-full bg-white border-4 border-slate-200 shadow-md flex items-center justify-center text-xl text-slate-400 mb-0 md:mb-6 shrink-0 group-hover:border-blue-300 transition-colors">
+                                <i class="fa-solid fa-truck-house"></i>
+                            </div>
+                            <div class="flex-1">
+                                <span
+                                    class="bg-slate-100 text-slate-500 text-[10px] font-bold px-2 py-1 rounded inline-block mb-2 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">STEP
+                                    4</span>
+                                <h3 class="font-bold text-xl text-slate-900 mb-4">입주 & 정산 (Move-in)</h3>
+                                <ul class="space-y-2.5">
+                                    <li class="flex items-center gap-2 text-sm text-slate-600">
+                                        <i class="fa-solid fa-check text-blue-500 text-xs"></i> 잔금/관리비 정산
+                                    </li>
+                                    <li class="flex items-center gap-2 text-sm text-slate-600">
+                                        <i class="fa-solid fa-check text-blue-500 text-xs"></i> 전입신고
+                                    </li>
+                                    <li class="flex items-center gap-2 text-sm text-slate-600">
+                                        <i class="fa-solid fa-check text-blue-500 text-xs"></i> 비번 변경
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="text-center mt-12">
+                <a href="guide.html"
+                    class="inline-flex items-center gap-2 bg-slate-900 text-white px-8 py-4 rounded-full font-bold shadow-lg hover:bg-slate-800 transition-all hover:scale-105">
+                    [계약/이사 가이드] 시작하기 <i class="fa-solid fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. Section: Expert's Note -->
+    <section class="py-20 bg-orange-50 border-t border-orange-100">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-12">
+                <span class="text-orange-600 font-bold tracking-widest text-xs uppercase mb-2 block">Premium
+                    Insight</span>
+                <h2 class="text-3xl font-bold text-slate-900 mb-4">
+                    현직 감정평가사의 시선 <span class="text-slate-400 font-light">(Expert's Note)</span>
+                </h2>
+                <p class="text-slate-600 max-w-2xl mx-auto">
+                    인터넷에 떠도는 뇌피셜 말고, 검증된 진짜 정보를 확인하세요.<br>
+                    수천 건의 평가 경험으로 전세 시장의 진실을 기록합니다.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto mb-10">
+                <!-- Card 1 -->
+                <a href="insight.html"
+                    class="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 block">
+                    <div class="h-48 overflow-hidden relative">
+                        <img src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+                            class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                            alt="Column 1">
+                        <div
+                            class="absolute top-4 left-4 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded">
+                            MUST READ</div>
+                    </div>
+                    <div class="p-6">
+                        <h3
+                            class="font-bold text-slate-900 text-lg mb-2 group-hover:text-orange-600 transition-colors line-clamp-2">
+                            전세사기 피하는 법, 등기부등본만 믿지 마세요.</h3>
+                        <p class="text-slate-500 text-sm line-clamp-2 leading-relaxed">공인중개사도 놓치는 깡통전세의 신호, 현장에서만 보이는 위험
+                            징후를 알려드립니다.</p>
+                        <div
+                            class="mt-4 pt-4 border-t border-slate-100 flex justify-between items-center text-xs text-slate-400">
+                            <span>by. 김평가사</span>
+                            <span>2026.01.05</span>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- Card 2 -->
+                <a href="insight.html"
+                    class="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 block">
+                    <div class="h-48 overflow-hidden relative">
+                        <img src="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+                            class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                            alt="Column 2">
+                    </div>
+                    <div class="p-6">
+                        <h3
+                            class="font-bold text-slate-900 text-lg mb-2 group-hover:text-orange-600 transition-colors line-clamp-2">
+                            특약사항에 '이 말' 없으면 보증금 못 돌려받습니다.</h3>
+                        <p class="text-slate-500 text-sm line-clamp-2 leading-relaxed">집주인이 웃으면서 도장 찍어줘도 소용없습니다. 내 돈 지키는
+                            필수 특약 3가지.</p>
+                        <div
+                            class="mt-4 pt-4 border-t border-slate-100 flex justify-between items-center text-xs text-slate-400">
+                            <span>by. 김평가사</span>
+                            <span>2026.01.02</span>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- Card 3 -->
+                <a href="insight.html"
+                    class="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 block">
+                    <div class="h-48 overflow-hidden relative">
+                        <img src="https://images.unsplash.com/photo-1486325212027-8081e485255e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+                            class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                            alt="Column 3">
+                    </div>
+                    <div class="p-6">
+                        <h3
+                            class="font-bold text-slate-900 text-lg mb-2 group-hover:text-orange-600 transition-colors line-clamp-2">
+                            2026년 서울 전세 시장 전망</h3>
+                        <p class="text-slate-500 text-sm line-clamp-2 leading-relaxed">지금 전세 들어가는 게 맞을까요? 데이터로 분석한 시장
+                            흐름과 세입자 대응 전략.</p>
+                        <div
+                            class="mt-4 pt-4 border-t border-slate-100 flex justify-between items-center text-xs text-slate-400">
+                            <span>by. 김평가사</span>
+                            <span>2025.12.28</span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <div class="text-center">
+                <a href="insight.html"
+                    class="inline-flex items-center gap-2 font-bold text-slate-600 hover:text-orange-600 transition-colors border-b-2 border-transparent hover:border-orange-600 pb-1">
+                    전문가 칼럼 전체보기 <i class="fa-solid fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- 6. Safety Banner -->
+    <section class="py-16 bg-blue-600 text-white text-center">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold mb-4">깡통전세 위험, 3초면 끝</h2>
+            <p class="text-blue-100 mb-8 max-w-xl mx-auto">
+                내 보증금은 소중하니까. 주소만 입력하면 위험도를 분석해드립니다.
+            </p>
+            <button
+                class="bg-white text-blue-600 hover:bg-blue-50 font-bold py-4 px-10 rounded-full shadow-lg transition-all hover:scale-105">
+                무료로 물건 분석하기 →
+            </button>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <!-- Global Footer -->
+    <footer class="bg-gray-900 border-t border-gray-800 text-gray-400 py-12">
+        <div class="max-w-screen-xl mx-auto px-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div class="space-y-4">
+                    <h3 class="text-2xl font-bold text-white">Tenant Note</h3>
+                    <p class="text-sm">세입자의 권리를 지킵니다.<br>안전한 주거 경험을 위한 필수 가이드.</p>
+                </div>
+                <div class="space-y-4">
+                    <h4 class="text-lg font-bold text-white">서비스</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#" class="hover:text-blue-500 transition">서비스 소개</a></li>
+                        <li><a href="#" class="hover:text-blue-500 transition">이용약관</a></li>
+                        <li><a href="#" class="hover:text-blue-500 transition">개인정보처리방침</a></li>
+                        <li><a href="#" class="hover:text-blue-500 transition">자주 묻는 질문</a></li>
+                    </ul>
+                </div>
+                <div class="space-y-4">
+                    <h4 class="text-lg font-bold text-white">문의</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><i class="fa-regular fa-envelope mr-2"></i> support@tenantnote.com</li>
+                        <li><i class="fa-regular fa-handshake mr-2"></i> partner@tenantnote.com</li>
+                    </ul>
+                </div>
+                <div class="space-y-4">
+                    <h4 class="text-lg font-bold text-white">소셜</h4>
+                    <div class="flex gap-4">
+                        <a href="#"
+                            class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-blue-600 hover:text-white transition"><i
+                                class="fa-brands fa-instagram text-xl"></i></a>
+                        <a href="#"
+                            class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-red-600 hover:text-white transition"><i
+                                class="fa-brands fa-youtube text-xl"></i></a>
+                        <a href="#"
+                            class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-green-600 hover:text-white transition"><i
+                                class="fa-solid fa-blog text-xl"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-12 pt-8 text-center text-xs">
+                <p>&copy; 2026 Tenant Note. All rights reserved. (Designed by Vibe Coding)</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Global Review Write Modal -->
+    <div id="review-modal"
+        class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[150] hidden flex items-end md:items-center justify-center">
+        <div class="bg-white w-full max-w-lg rounded-t-3xl md:rounded-3xl p-6 shadow-2xl animate-fade-in-up">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-slate-900">살아본 집의 찐후기를 들려주세요!</h3>
+                <button onclick="document.getElementById('review-modal').classList.add('hidden')"
+                    class="text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-xmark text-2xl"></i>
+                </button>
+            </div>
+
+            <div class="space-y-4">
+                <!-- 1. Address Search -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">어디에 사셨나요?</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-slate-400"></i>
+                        <input type="text" placeholder="도로명 주소나 건물명 검색"
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-sm font-bold outline-none focus:border-blue-500 transition-colors">
+                    </div>
+                </div>
+
+                <!-- 2. Period -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">거주 기간</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <select
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-blue-500">
+                            <option>2024년</option>
+                            <option>2023년</option>
+                            <option>2022년</option>
+                            <option>2021년 이전</option>
+                        </select>
+                        <select
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-blue-500">
+                            <option>1년 미만</option>
+                            <option>1년</option>
+                            <option>2년 이상</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 3. Rating -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">이 집의 총점은?</label>
+                    <div class="flex gap-2 justify-center py-4 bg-slate-50 rounded-xl border border-slate-200">
+                        <i class="fa-solid fa-star text-3xl text-gray-300 cursor-pointer hover:text-yellow-400"
+                            onclick="this.classList.toggle('text-yellow-400'); this.classList.toggle('text-gray-300')"></i>
+                        <i class="fa-solid fa-star text-3xl text-gray-300 cursor-pointer hover:text-yellow-400"
+                            onclick="this.classList.toggle('text-yellow-400'); this.classList.toggle('text-gray-300')"></i>
+                        <i class="fa-solid fa-star text-3xl text-gray-300 cursor-pointer hover:text-yellow-400"
+                            onclick="this.classList.toggle('text-yellow-400'); this.classList.toggle('text-gray-300')"></i>
+                        <i class="fa-solid fa-star text-3xl text-gray-300 cursor-pointer hover:text-yellow-400"
+                            onclick="this.classList.toggle('text-yellow-400'); this.classList.toggle('text-gray-300')"></i>
+                        <i class="fa-solid fa-star text-3xl text-gray-300 cursor-pointer hover:text-yellow-400"
+                            onclick="this.classList.toggle('text-yellow-400'); this.classList.toggle('text-gray-300')"></i>
+                    </div>
+                </div>
+
+                <!-- 4. Pros/Cons -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-blue-600 mb-1">장점</label>
+                        <textarea
+                            class="w-full h-24 bg-blue-50/50 border border-blue-100 rounded-xl p-3 text-sm resize-none outline-none focus:border-blue-500"
+                            placeholder="채광, 치안, 교통 등 만족스러운 점"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-red-500 mb-1">단점</label>
+                        <textarea
+                            class="w-full h-24 bg-red-50/50 border border-red-100 rounded-xl p-3 text-sm resize-none outline-none focus:border-red-500"
+                            placeholder="소음, 벌레, 곰팡이 등 아쉬운 점"></textarea>
+                    </div>
+                </div>
+
+                <button
+                    onclick="alert('소중한 후기 감사합니다! 500P가 적립되었습니다.'); document.getElementById('review-modal').classList.add('hidden')"
+                    class="w-full bg-slate-900 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-slate-800 transition-all transform hover:scale-[1.02]">
+                    등록하고 포인트 받기 💰
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchInput = document.getElementById('hero-search-input');
+            const searchBtn = document.getElementById('hero-search-btn');
+
+            function performSearch() {
+                const query = searchInput.value.trim();
+                if (!query) {
+                    alert('지역명이나 건물명을 입력해주세요!');
+                    return;
+                }
+                // 검색어를 가지고 reviews.html로 이동
+                window.location.href = `reviews.html?q=${encodeURIComponent(query)}`;
+            }
+
+            // 버튼 클릭 이벤트
+            searchBtn.addEventListener('click', performSearch);
+
+            // 엔터키 이벤트
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    performSearch();
+                }
+            });
+            // --- Review Carousel Logic ---
+            const districts = ['관악구 신림동', '관악구 봉천동', '강남구 역삼동', '강남구 논현동', '마포구 망원동', '마포구 연남동', '영등포구 당산동', '광진구 화양동', '동작구 상도동', '성동구 사근동'];
+
+            const prosList = [
+                "역에서 뛰면 진짜 1분 컷. 늦잠 자도 지각 안 함. 삶의 질이 달라짐.",
+                "집주인 할머니가 명절마다 전이랑 잡채 챙겨주심. 서울의 어머니...",
+                "남향이라 낮에 불 안 켜도 됨. 난방비가 확실히 덜 나옴. 채광 맛집.",
+                "바로 1층에 편의점 있고 3분 거리에 다이소 있어서 슬세권 최강.",
+                "구축이라 걱정했는데 리모델링 싹 돼서 신축 오피스텔보다 깔끔함.",
+                "바로 앞에 파출소 있어서 밤늦게 다녀도 무섭지 않음. 치안 최고.",
+                "방음이 생각보다 너무 잘됨. 옆집에 사람 사는 줄도 몰랐음.",
+                "주차 공간이 지정석이라 퇴근하고 주차 전쟁 안 해도 됨.",
+                "관리비에 인터넷, 수도 포함이라 월 고정 지출이 적음.",
+                "도보 5분 거리에 대형 마트랑 영화관 있어서 인프라 끝판왕.",
+                "수압이 마사지 수준임. 씻을 때마다 피로가 풀림.",
+                "엘리베이터가 2대라 출근 시간에도 기다릴 필요 없음.",
+                "신축이라 벌레 한 마리도 못 봄. 세스코 필요 없음.",
+                "옥상을 개방해놔서 가끔 맥주 한잔하기 딱 좋음. 뷰가 미쳤음.",
+                "집 바로 뒤에 산책로가 있어서 저녁 먹고 운동하기 너무 좋음.",
+                "분리수거장이 엄청 깨끗하게 관리됨. 냄새 1도 안 남.",
+                "창문이 이중창이라 대로변인데도 문 닫으면 세상 조용함.",
+                "화장실이 방이랑 분리되어 있어서 습기 걱정 없음. 곰팡이 해방.",
+                "벽지가 실크벽지라 고급스럽고 뭐 묻어도 잘 지워짐.",
+                "옵션으로 있는 세탁기가 건조 기능까지 있어서 빨래 걱정 끝."
+            ];
+
+            const consList = [
+                "옆집 통화 내용까지 다 들림. 어제 남친이랑 싸운 내용 받아적을 뻔.",
+                "여름만 되면 하수구에서 냄새가 올라옴. 트랩 설치해도 소용없음.",
+                "1층 현관 보안이 허술해서 배달 음식 시키면 자꾸 사라짐.",
+                "집주인이 깐깐해서 못 하나 박을 때마다 허락 받아야 함. 스트레스.",
+                "결로가 너무 심해서 겨울에 창틀에 물이 흥건함. 곰팡이 파티.",
+                "옆집 코니 노래 소리 다 들림. 방음이 그냥 없다고 보면 됨.",
+                "집주인이 CCTV로 감시하는 느낌임. 분리수거 조금만 잘못해도 전화 옴.",
+                "1층 식당 때문에 여름에 바퀴벌레랑 눈 마주침. 소름 돋음.",
+                "언덕 경사가 거의 등산 수준. 눈 오면 집에 못 들어감.",
+                "보일러가 너무 오래돼서 온수 나오려면 5분 동안 물 틀어놔야 함.",
+                "화장실 환풍구가 옆집이랑 연결된 건지 담배 냄새가 계속 넘어옴.",
+                "벽이 합판인가? 옆집 핸드폰 진동 소리에 내가 깸.",
+                "관리비는 비싼데 관리는 1도 안 됨. 복도 청소 내가 함.",
+                "수압이 너무 약해서 변기 물 내리면 샤워기 물이 끊김.",
+                "바로 앞이 술집 골목이라 새벽 3시까지 고성방가 ASMR 강제 청취.",
+                "택배 보관함이 없어서 문 앞에 두면 자꾸 없어짐. 스트레스.",
+                "주차장이 너무 좁아서 차 뺄 때마다 전화해야 함. 이중주차 지옥.",
+                "방 창문이 복도 쪽으로 나 있어서 환기 시킬 때마다 사생활 노출됨.",
+                "인터넷이 너무 느려서 게임은 꿈도 못 꿈. 와이파이 자주 끊김.",
+                "윗집 발망치 소리에 노이로제 걸릴 지경. 쿵쿵쿵 심장이 울림."
+            ];
+
+            function generateMockReviews() {
+                const container = document.getElementById('review-container');
+                if (!container) return;
+
+                let html = '';
+
+                for (let i = 0; i < 30; i++) {
+                    const location = districts[Math.floor(Math.random() * districts.length)];
+                    const pro = prosList[Math.floor(Math.random() * prosList.length)];
+                    const con = consList[Math.floor(Math.random() * consList.length)];
+                    const rating = (Math.random() * (5.0 - 1.5) + 1.5).toFixed(1);
+
+                    html += `
+                        <div class="min-w-[320px] max-w-[320px] min-h-[200px] snap-center rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md flex flex-col justify-between h-full">
+                            <div>
+                                <div class="mb-4 flex items-center justify-between">
+                                    <span class="rounded-md bg-gray-100 px-2.5 py-1 text-xs font-bold text-gray-600">${location}</span>
+                                    <div class="flex items-center gap-1">
+                                        <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                        <span class="text-sm font-bold text-gray-800">${rating}</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="space-y-4">
+                                    <div>
+                                        <div class="mb-1 flex items-center gap-1.5">
+                                            <span class="text-lg">😊</span>
+                                            <span class="text-sm font-bold text-blue-600">장점</span>
+                                        </div>
+                                        <p class="text-sm leading-relaxed text-gray-600 break-keep whitespace-normal">
+                                            "${pro}"
+                                        </p>
+                                    </div>
+                                    
+                                    <div>
+                                        <div class="mb-1 flex items-center gap-1.5">
+                                            <span class="text-lg">😤</span>
+                                            <span class="text-sm font-bold text-red-500">단점</span>
+                                        </div>
+                                        <p class="text-sm leading-relaxed text-gray-600 break-keep whitespace-normal">
+                                            "${con}"
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-6 border-t border-gray-50 pt-3 text-xs text-gray-400 flex justify-between items-center">
+                                <span>실거주 인증 완료 ✅</span>
+                                <span>2024.03.${Math.floor(Math.random() * 30) + 1}</span>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                container.innerHTML = html;
+            }
+
+            // Init
+            generateMockReviews();
+
+            // Scroll Buttons Logic
+            const reviewContainer = document.getElementById('review-container');
+            const prevBtn = document.getElementById('review-prev');
+            const nextBtn = document.getElementById('review-next');
+
+            if (reviewContainer && prevBtn && nextBtn) {
+                prevBtn.addEventListener('click', () => {
+                    reviewContainer.scrollBy({ left: -340, behavior: 'smooth' });
+                });
+                nextBtn.addEventListener('click', () => {
+                    reviewContainer.scrollBy({ left: 340, behavior: 'smooth' });
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>
