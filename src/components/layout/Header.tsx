@@ -28,7 +28,7 @@ export default function Header() {
 
                     <nav className="hidden md:flex items-center gap-10">
                         <Link
-                            href="/reviews.html"
+                            href="/map"
                             className="group flex flex-col items-center justify-center gap-1 py-2"
                         >
                             <span className="text-lg font-bold text-gray-800 transition group-hover:text-blue-600">
@@ -39,7 +39,7 @@ export default function Header() {
                             </span>
                         </Link>
                         <Link
-                            href="/safety.html"
+                            href="/analysis"
                             className="group flex flex-col items-center justify-center gap-1 py-2"
                         >
                             <span className="text-lg font-bold text-gray-800 transition group-hover:text-blue-600">
@@ -50,7 +50,7 @@ export default function Header() {
                             </span>
                         </Link>
                         <Link
-                            href="/guide.html"
+                            href="/guide"
                             className="group flex flex-col items-center justify-center gap-1 py-2"
                         >
                             <span className="text-lg font-bold text-gray-800 transition group-hover:text-blue-600">
@@ -61,7 +61,7 @@ export default function Header() {
                             </span>
                         </Link>
                         <Link
-                            href="/community.html"
+                            href="/community"
                             className="group flex flex-col items-center justify-center gap-1 py-2"
                         >
                             <span className="text-lg font-bold text-gray-800 transition group-hover:text-blue-600">
@@ -72,7 +72,7 @@ export default function Header() {
                             </span>
                         </Link>
                         <Link
-                            href="/insight.html"
+                            href="/insight"
                             className="group flex flex-col items-center justify-center gap-1 py-2"
                         >
                             <span className="text-lg font-bold text-gray-800 transition group-hover:text-blue-600">
@@ -124,7 +124,7 @@ export default function Header() {
                     >
                         <div className="space-y-1 px-4 py-6">
                             <Link
-                                href="/reviews.html"
+                                href="/map"
                                 className="block rounded-lg px-4 py-3 text-base font-bold text-gray-800 hover:bg-blue-50 hover:text-blue-600"
                             >
                                 동네 분석{" "}
@@ -133,7 +133,7 @@ export default function Header() {
                                 </span>
                             </Link>
                             <Link
-                                href="/safety.html"
+                                href="/analysis"
                                 className="block rounded-lg px-4 py-3 text-base font-bold text-gray-800 hover:bg-blue-50 hover:text-blue-600"
                             >
                                 물건 분석{" "}
@@ -142,7 +142,7 @@ export default function Header() {
                                 </span>
                             </Link>
                             <Link
-                                href="/guide.html"
+                                href="/guide"
                                 className="block rounded-lg px-4 py-3 text-base font-bold text-gray-800 hover:bg-blue-50 hover:text-blue-600"
                             >
                                 계약/이사 가이드{" "}
@@ -151,7 +151,7 @@ export default function Header() {
                                 </span>
                             </Link>
                             <Link
-                                href="/community.html"
+                                href="/community"
                                 className="block rounded-lg px-4 py-3 text-base font-bold text-gray-800 hover:bg-blue-50 hover:text-blue-600"
                             >
                                 테넌트 라운지{" "}
@@ -160,7 +160,7 @@ export default function Header() {
                                 </span>
                             </Link>
                             <Link
-                                href="/insight.html"
+                                href="/insight"
                                 className="block rounded-lg px-4 py-3 text-base font-bold text-gray-800 hover:bg-blue-50 hover:text-blue-600"
                             >
                                 인사이트{" "}
