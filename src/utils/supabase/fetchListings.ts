@@ -1,33 +1,42 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@/utils/supabase/client';
 
-// 1. 환경변수 로딩
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
-
-// 2. 데이터 타입 정의
 export interface Listing {
     id: string;
-    price_deposit: number;
-    price_monthly: number;
     building_name: string;
-    safety_grade: string;
     lat: number;
     lng: number;
+    price_deposit: number;
+    price_monthly: number;
+    safety_grade: string;
+    // 필요한 경우 추가 필드 정의
 }
 
-// 3. 데이터 가져오기 (가상 테이블 View 사용)
+// 1. [지도용] 모든 매물 가져오기 (이게 없어서 지도가 안 떴던 겁니다!)
 export const fetchListings = async (): Promise<Listing[]> => {
-    // 여기가 바뀝니다! 'listings' -> 'listings_with_geo'
+    const supabase = createClient();
     const { data, error } = await supabase
         .from('listings_with_geo')
-        .select('*') // 복잡한 수식 없이 깔끔하게!
-        .limit(100);
+        .select('*');
 
     if (error) {
         console.error('Error fetching listings:', error);
         return [];
     }
-
     return data as Listing[];
+};
+
+// 2. [상세페이지용] 특정 매물 하나만 가져오기
+export const getListingById = async (id: string): Promise<Listing | null> => {
+    const supabase = createClient();
+    const { data, error } = await supabase
+        .from('listings_with_geo')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+    if (error) {
+        console.error(`Error fetching listing ${id}:`, error);
+        return null;
+    }
+    return data as Listing;
 };
