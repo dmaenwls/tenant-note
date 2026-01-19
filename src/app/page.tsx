@@ -26,7 +26,7 @@ export default function Home() {
       alert("지역명이나 건물명을 입력해주세요!");
       return;
     }
-    router.push(`reviews.html?q=${encodeURIComponent(searchQuery)}`);
+    router.push('/map');
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {

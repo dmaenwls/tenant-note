@@ -27,7 +27,7 @@ const formatPrice = (deposit: number, monthly: number) => {
     return monthly > 0 ? `${depositStr} / ${monthly}` : depositStr;
 };
 
-export default function MapContainer() {
+export default function MapContainer({ onListingSelect }: { onListingSelect?: (id: string) => void }) {
     // 3. Load Kakao Maps SDK
     useKakaoLoader({
         appkey: process.env.NEXT_PUBLIC_KAKAO_MAP_API_KEY!,
@@ -125,7 +125,11 @@ export default function MapContainer() {
                                 type="button"
                                 onClick={(e) => {
                                     e.stopPropagation(); // Stop bubbling to map
-                                    router.push(`/analysis/${selectedListing.id}`); // Smooth transition
+                                    if (onListingSelect) {
+                                        onListingSelect(selectedListing.id);
+                                    } else {
+                                        router.push(`/analysis/${selectedListing.id}`); // Keep fallback
+                                    }
                                 }}
                                 className="w-full mt-3 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors flex items-center justify-center shadow-md cursor-pointer z-50 pointer-events-auto"
                             >
