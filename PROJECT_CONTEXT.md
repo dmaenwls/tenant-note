@@ -2,6 +2,11 @@
 Last Updated: 2026-01-13 (v2.0)
 Status: MVP Development & Logic Refinement
 
+## 0. 긴급 원칙: 레거시 복원 (Legacy Restoration)
+- **절대 원칙:** 현재 단계에서는 UI를 개선하지 말고, `_legacy_prototype` 폴더의 HTML/CSS를 **픽셀 단위로 동일하게** Next.js(JSX)로 옮기는 것에 집중한다.
+- **데이터 원칙:** DB 연결이나 API 호출 로직을 작성하지 마라. 모든 데이터는 파일 내부에 `const MOCK_DATA = [...]` 형태로 하드코딩하여 UI가 즉시 렌더링되게 하라.
+- **스타일 원칙:** 기존 HTML의 Tailwind 클래스를 그대로 유지하라. 컴포넌트를 과도하게 쪼개지 말고, 하나의 파일이 길어지더라도 원본 HTML 구조를 유지하라.
+
 ## 1. 프로젝트 개요 (Identity)
 - **서비스명:** Tenant Note (테넌트 노트)
 - **정의:** "빈 공책이 아니다. 데이터가 미리 써둔 **부동산 비급(족보)**이다."
