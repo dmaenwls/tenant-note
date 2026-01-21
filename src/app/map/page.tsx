@@ -67,17 +67,7 @@ const MOCK_ZONE_REPORT = {
     }
 };
 
-// CCTV Generator Function
-const generateMockCCTV = (centerLat: number, centerLng: number, count: number) => {
-    const cctvs = [];
-    for (let i = 0; i < count; i++) {
-        cctvs.push({
-            lat: centerLat + (Math.random() - 0.5) * 0.01,
-            lng: centerLng + (Math.random() - 0.5) * 0.01
-        });
-    }
-    return cctvs;
-};
+
 
 const HOUSING_TYPE_LABELS: Record<string, string> = {
     'APT': '아파트',
@@ -146,6 +136,7 @@ export default function MapPage() {
     // Data State (Lazy Loaded)
     const [listings, setListings] = useState<any[]>([]);
     const [seoulGeoJson, setSeoulGeoJson] = useState<any>(null); // GeoJSON Data
+    const [cctvData, setCctvData] = useState<any[]>([]); // Real CCTV Data
 
     // Map Objects References 
     const markersRef = useRef<any[]>([]);
@@ -215,6 +206,75 @@ export default function MapPage() {
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return R * c;
     };
+
+    // ----------------------------------------------------------------------
+    // API HANDLERS (CCTV)
+    // ----------------------------------------------------------------------
+    const fetchCCTVData = async () => {
+        if (!mapRef.current) return;
+
+        console.log("📡 [CCTV] 데이터 요청 준비...");
+        const center = mapRef.current.getCenter();
+        const lat = center.getLat();
+        const lng = center.getLng();
+
+        try {
+            console.log(`📡 [CCTV] API 호출: /api/cctv?lat=${lat}&lng=${lng}`);
+            const res = await fetch(`/api/cctv?lat=${lat}&lng=${lng}`);
+
+            if (!res.ok) {
+                console.error(`🔥 [CCTV] API Error Status: ${res.status}`);
+                return;
+            }
+
+            const data = await res.json();
+
+            if (data.error) {
+                console.error(`🔥 [CCTV] Server Error: ${data.error}`);
+                alert(`CCTV 데이터를 불러오지 못했습니다: ${data.error}`);
+                return;
+            }
+
+            const features = data.features || [];
+            console.log(`📦 [CCTV] 데이터 수신 완료: ${features.length}건`);
+
+            if (features.length === 0) {
+                alert("주변에 조회된 CCTV가 없습니다. (데이터가 0건입니다)");
+            }
+
+            setCctvData(features);
+
+        } catch (err) {
+            console.error("☠️ [CCTV] Network Error:", err);
+            alert("CCTV 데이터 요청 중 네트워크 에러가 발생했습니다.");
+        }
+    };
+
+    // Debounce Ref for Map Movement
+    const mapDebounceTimer = useRef<NodeJS.Timeout | null>(null);
+
+    useEffect(() => {
+        if (!mapRef.current) return;
+        const map = mapRef.current;
+
+        const handleMapUpdate = () => {
+            if (activeLayers.cctv) {
+                if (mapDebounceTimer.current) clearTimeout(mapDebounceTimer.current);
+                mapDebounceTimer.current = setTimeout(() => {
+                    fetchCCTVData();
+                }, 500); // 0.5s Debounce
+            }
+        };
+
+        kakao.maps.event.addListener(map, 'dragend', handleMapUpdate);
+        kakao.maps.event.addListener(map, 'zoom_changed', handleMapUpdate);
+
+        // Initial Fetch when layer becomes active
+        if (activeLayers.cctv && cctvData.length === 0) {
+            fetchCCTVData();
+        }
+    }, [activeLayers.cctv]); // Re-bind if layer toggles
+
 
 
     // ----------------------------------------------------------------------
@@ -576,17 +636,34 @@ export default function MapPage() {
             });
         }
 
-        // 5. Draw CCTV (Icon)
+        // 5. Draw CCTV (Real Data)
         if (activeLayers.cctv) {
-            const cctvLocations = generateMockCCTV(37.4842, 126.9296, 20);
-            cctvLocations.forEach(loc => {
+            cctvData.forEach(cctv => {
                 const content = document.createElement('div');
-                content.innerHTML = '<i class="fa-solid fa-video text-white bg-blue-600 p-1.5 rounded-full shadow-md text-[10px]"></i>';
+                content.className = 'group relative cursor-pointer';
+                // Marker: Blue Circle with Camera Count
+                content.innerHTML = `
+                    <div class="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 shadow-lg border-2 border-white text-white font-bold text-[10px] hover:bg-blue-700 transition-colors">
+                        <i class="fa-solid fa-video mr-1"></i>${cctv.count}
+                    </div>
+                `;
+
+                // Tooltip (Simple HTML Title logic or Custom Overlay on hover)
+                // Using Title for simplicity or Custom logic if needed. 
+                // Let's add a simple tooltip div inside that shows on hover via CSS
+                const tooltipInfo = `
+                    <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-2 py-1 bg-gray-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                        ${cctv.name}<br>
+                        목적: ${cctv.purpose}
+                    </div>
+                `;
+                content.innerHTML += tooltipInfo;
 
                 const overlay = new kakao.maps.CustomOverlay({
-                    position: new kakao.maps.LatLng(loc.lat, loc.lng),
+                    position: new kakao.maps.LatLng(cctv.lat, cctv.lng),
                     content: content,
-                    yAnchor: 1
+                    yAnchor: 1.2,
+                    zIndex: 30
                 });
                 overlay.setMap(map);
                 cctvMarkersRef.current.push(overlay);
@@ -625,7 +702,7 @@ export default function MapPage() {
             });
         }
 
-    }, [activeLayers, currentViewMode, seoulGeoJson]);
+    }, [activeLayers, currentViewMode, seoulGeoJson, cctvData]);
 
 
     // Chart Rendering Effect (Handling both Listing and Zone Selection)
