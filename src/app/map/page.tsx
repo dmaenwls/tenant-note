@@ -17,6 +17,19 @@ import {
 ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend, RadarController);
 
 // ----------------------------------------------------------------------
+// HELPER FUNCTIONS (Static)
+// ----------------------------------------------------------------------
+const getPolygonCenter = (path: any[]) => {
+    let latSum = 0;
+    let lngSum = 0;
+    path.forEach(p => {
+        latSum += p.getLat();
+        lngSum += p.getLng();
+    });
+    return new window.kakao.maps.LatLng(latSum / path.length, lngSum / path.length);
+};
+
+// ----------------------------------------------------------------------
 // DATA CONSTANTS (Restored from reviews.html)
 // ----------------------------------------------------------------------
 
@@ -27,9 +40,7 @@ const MOCK_NOISE_ZONES = [
 const MOCK_ACADEMY_ZONES = [
     { center: { lat: 37.478, lng: 126.952 }, radius: 300, label: '🎓 봉천동 학원가' }
 ];
-const MOCK_HILL_ZONES = [
-    { center: { lat: 37.470, lng: 126.940 }, radius: 400, label: '⛰️ 급경사 구간' }
-];
+
 
 const MOCK_ZONE_REPORT = {
     name: "관악구 신림동",
@@ -134,12 +145,18 @@ export default function MapPage() {
 
     // Data State (Lazy Loaded)
     const [listings, setListings] = useState<any[]>([]);
+    const [seoulGeoJson, setSeoulGeoJson] = useState<any>(null); // GeoJSON Data
 
     // Map Objects References 
     const markersRef = useRef<any[]>([]);
     const layerObjectsRef = useRef<any[]>([]);
     const cctvMarkersRef = useRef<any[]>([]);
+
     const polygonsRef = useRef<any[]>([]);
+
+    // Interaction Refs
+    const isDraggingRef = useRef(false);
+    const hoverDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
     // Chart Refs
     const chartRef = useRef<HTMLCanvasElement>(null);
@@ -223,6 +240,10 @@ export default function MapPage() {
         const zoomControl = new kakao.maps.ZoomControl();
         mapInstance.addControl(zoomControl, kakao.maps.ControlPosition.RIGHT);
 
+        // Interaction Listeners for Global State
+        kakao.maps.event.addListener(mapInstance, 'dragstart', () => { isDraggingRef.current = true; });
+        kakao.maps.event.addListener(mapInstance, 'dragend', () => { isDraggingRef.current = false; });
+
         mapRef.current = mapInstance;
 
         // Lazy Load Data
@@ -234,6 +255,12 @@ export default function MapPage() {
             setListings(initialData);
             setInitialLoading(false);
         }, 300);
+
+        // Fetch Slope GeoJSON
+        fetch('/data/seoul_slope_v2.json')
+            .then(res => res.json())
+            .then(data => setSeoulGeoJson(data))
+            .catch(err => console.error("Failed to load slope data:", err));
 
     }, [isMapLoaded]);
 
@@ -371,33 +398,181 @@ export default function MapPage() {
         }
 
         // 4. Draw Hill Zones (Brown) + Labels
-        if (activeLayers.hill) {
-            MOCK_HILL_ZONES.forEach(zone => {
-                const circle = new kakao.maps.Circle({
-                    center: new kakao.maps.LatLng(zone.center.lat, zone.center.lng),
-                    radius: zone.radius,
-                    strokeWeight: 1,
-                    strokeColor: '#92400e',
-                    strokeOpacity: 0.8,
-                    strokeStyle: 'solid',
-                    fillColor: '#92400e',
-                    fillOpacity: 0.4
-                });
-                circle.setMap(map);
-                layerObjectsRef.current.push(circle);
+        // 4. Draw Hill Zones (Slope Choropleth)
+        if (activeLayers.hill && seoulGeoJson) {
 
-                // Label
-                const content = document.createElement('div');
-                content.className = 'bg-amber-800 text-white text-[10px] px-2 py-1 rounded-full shadow-md font-bold flex items-center gap-1 opacity-90 border-2 border-white';
-                content.innerHTML = `<i class="fa-solid fa-mountain"></i> ${zone.label}`;
+            // CustomOverlay for Hover (Tooltip) - Replaces InfoWindow to fix flickering
+            const tooltipOverlay = new kakao.maps.CustomOverlay({
+                zIndex: 20,
+                yAnchor: 1.5 // Offset above cursor
+            });
 
-                const labelOverlay = new kakao.maps.CustomOverlay({
-                    position: new kakao.maps.LatLng(zone.center.lat, zone.center.lng),
-                    content: content,
-                    yAnchor: 1.5
+            seoulGeoJson.features.forEach((feature: any) => {
+                const geometry = feature.geometry;
+                const props = feature.properties;
+                const slope = props.mean_slope || 0;
+
+                // Color Logic
+                let fillColor = '#22c55e';
+                let fillOpacity = 0.1;
+
+                if (slope >= 15) {
+                    fillColor = '#7f1d1d'; // Danger (Very Steep)
+                    fillOpacity = 0.7;
+                } else if (slope >= 10) {
+                    fillColor = '#c2410c'; // High (Steep)
+                    fillOpacity = 0.6;
+                } else if (slope >= 5) {
+                    fillColor = '#fbbf24'; // Medium (Hill)
+                    fillOpacity = 0.4;
+                } else {
+                    // Low (Flat) - transparent or light green
+                    fillColor = '#22c55e';
+                    fillOpacity = 0.1;
+                }
+
+                // Create Polygon Path
+                // GeoJSON coordinates are [lng, lat]. Kakao needs LatLng.
+                // Handle MultiPolygon if necessary (though simple Polygon usually)
+                // Assuming Polygon type for simplicity (SHP to GeoJSON usually matches)
+
+                const coordinates = geometry.coordinates;
+                // Check if Polygon or MultiPolygon. 
+                // Shapefile conversion usually creates Polygon or MultiPolygon.
+                // Simple iteration for Polygon (depth 3 usually: [ [ [x,y]... ] ])
+                // MultiPolygon (depth 4: [ [ [ [x,y]... ] ] ])
+
+                const createKakaoPath = (ring: any[]) => {
+                    return ring.map(coord => new window.kakao.maps.LatLng(coord[1], coord[0]));
+                };
+
+                const paths: any[] = [];
+
+                if (geometry.type === 'Polygon') {
+                    coordinates.forEach((ring: any[]) => {
+                        paths.push(createKakaoPath(ring));
+                    });
+                } else if (geometry.type === 'MultiPolygon') {
+                    coordinates.forEach((polygon: any[]) => {
+                        polygon.forEach((ring: any[]) => {
+                            paths.push(createKakaoPath(ring));
+                        });
+                    });
+                }
+
+                paths.forEach(path => {
+                    const polygon = new kakao.maps.Polygon({
+                        path: path,
+                        strokeWeight: 1,
+                        strokeColor: '#7f1d1d', // Border color same as max danger? Or generic?
+                        strokeOpacity: slope >= 5 ? 0.5 : 0.1, // Less visible border for flat
+                        strokeStyle: 'solid',
+                        fillColor: fillColor,
+                        fillOpacity: fillOpacity
+                    });
+
+                    polygon.setMap(map);
+                    polygonsRef.current.push(polygon);
+
+                    // 4-1. Add Label for Steep Zones (>= 10 degrees)
+                    if (slope >= 10) {
+                        const center = getPolygonCenter(path);
+                        const labelContent = document.createElement('div');
+                        // Orange/Brown Style
+                        labelContent.className = 'bg-amber-800 text-white text-[10px] px-2 py-1 rounded-full shadow-md font-bold flex items-center gap-1 opacity-90 border-2 border-white pointer-events-none whitespace-nowrap';
+                        labelContent.innerHTML = `<i class="fa-solid fa-mountain"></i> ${props.ADM_NM || props.adm_nm} ${slope.toFixed(1)}°`;
+
+                        const labelOverlay = new kakao.maps.CustomOverlay({
+                            position: center,
+                            content: labelContent,
+                            yAnchor: 1.5,
+                            zIndex: 5
+                        });
+                        labelOverlay.setMap(map);
+                        // Add to layer objects to clear later
+                        layerObjectsRef.current.push(labelOverlay);
+                    }
+
+                    // 4-2. Optimized Interactions
+                    let mouseDownPos: any = null;
+
+                    kakao.maps.event.addListener(polygon, 'mousedown', function (e: any) {
+                        mouseDownPos = e.latLng;
+                    });
+
+                    kakao.maps.event.addListener(polygon, 'mouseover', function (mouseEvent: any) {
+                        if (isDraggingRef.current) return;
+
+                        // Debounce Hover Effect
+                        if (hoverDebounceTimerRef.current) clearTimeout(hoverDebounceTimerRef.current);
+
+                        hoverDebounceTimerRef.current = setTimeout(() => {
+                            if (isDraggingRef.current) return;
+                            polygon.setOptions({ fillOpacity: Math.min(fillOpacity + 0.2, 0.9) });
+
+                            const content = `<div style="padding:4px 8px; font-size:11px; font-weight:bold; color:#333; background:rgba(255,255,255,0.95); border:1px solid #ccc; border-radius:4px; white-space:nowrap; pointer-events:none; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+                                                ${props.ADM_NM || props.adm_nm} <br>
+                                                <span style="color:#666; font-weight:normal;">평균 경사도:</span> <span style="color:#d97706;">${slope.toFixed(2)}°</span>
+                                              </div>`;
+
+                            tooltipOverlay.setContent(content);
+                            tooltipOverlay.setPosition(mouseEvent.latLng);
+                            tooltipOverlay.setMap(map);
+                        }, 20); // Reduced delay for responsiveness
+                    });
+
+                    kakao.maps.event.addListener(polygon, 'mousemove', function (mouseEvent: any) {
+                        if (isDraggingRef.current) {
+                            tooltipOverlay.setMap(null);
+                            return;
+                        }
+                        tooltipOverlay.setPosition(mouseEvent.latLng);
+                    });
+
+                    kakao.maps.event.addListener(polygon, 'mouseout', function () {
+                        if (hoverDebounceTimerRef.current) clearTimeout(hoverDebounceTimerRef.current);
+                        polygon.setOptions({ fillOpacity: fillOpacity });
+                        tooltipOverlay.setMap(null);
+                    });
+
+                    // Click with Drag Check
+                    kakao.maps.event.addListener(polygon, 'click', function (mouseEvent: any) {
+                        if (!mouseDownPos) return;
+                        const upPos = mouseEvent.latLng;
+
+                        // Calculate distance to check for drag
+                        // Simple Manhattan distance approx is enough for pixels, but we have LatLng
+                        const latDiff = Math.abs(mouseDownPos.getLat() - upPos.getLat());
+                        const lngDiff = Math.abs(mouseDownPos.getLng() - upPos.getLng());
+
+                        // Threshold (approx 0.0001 deg is small enough to be a click, large enough to be a drag)
+                        if (latDiff > 0.0001 || lngDiff > 0.0001) {
+                            return; // It was a drag
+                        }
+
+                        // Handle actual click (optional: center map or show details)
+                        // handleZoneClick(...)
+                        handleZoneClick({
+                            name: props.ADM_NM || props.adm_nm,
+                            grade: slope >= 15 ? "D" : slope >= 10 ? "C" : slope >= 5 ? "B" : "A",
+                            score: 100 - (slope * 3), // Rough Calc
+                            stats: { cctv: "조회", police: 1, rentAvg: "-" },
+                            report: {
+                                safety: "경사도 분석 데이터입니다.",
+                                infra: "경사도가 높을수록 도보 이동이 어려울 수 있습니다.",
+                                traffic: "마을버스 노선을 확인하세요."
+                            },
+                            scores: {
+                                traffic: Math.max(0, 100 - slope * 5),
+                                environment: 80,
+                                living_comfort: Math.max(0, 90 - slope * 3),
+                                living_infra: 70,
+                                property_building: 60,
+                                security_safety: 80
+                            }
+                        });
+                    });
                 });
-                labelOverlay.setMap(map);
-                layerObjectsRef.current.push(labelOverlay);
             });
         }
 
@@ -450,7 +625,7 @@ export default function MapPage() {
             });
         }
 
-    }, [activeLayers, currentViewMode]);
+    }, [activeLayers, currentViewMode, seoulGeoJson]);
 
 
     // Chart Rendering Effect (Handling both Listing and Zone Selection)
