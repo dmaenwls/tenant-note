@@ -220,6 +220,17 @@ export default function MapPage() {
             return;
         }
 
+        const level = mapRef.current.getLevel();
+        console.log(`🔍 현재 줌 레벨: ${level}`);
+
+        // [수정] 6레벨 이상(넓은 지역)이면 데이터 요청 안 함
+        if (level > 5) {
+            console.warn("⚠️ 범위가 너무 넓습니다. CCTV 데이터를 비웁니다 (성능 보호).");
+            setCctvData([]);
+            if (clustererRef.current) clustererRef.current.clear();
+            return;
+        }
+
         const bounds = mapRef.current.getBounds();
         const sw = bounds.getSouthWest();
         const ne = bounds.getNorthEast();
@@ -252,66 +263,94 @@ export default function MapPage() {
         }
     }, [activeLayers.cctv]);
 
-    // ✅ 2. 데이터가 들어오면 지도에 그린다. (Renderer with Clusterer)
+    // ✅ 5. CCTV 렌더링 (툴팁 버그 수정 버전)
     useEffect(() => {
-        if (!mapRef.current) return;
+        if (!mapRef.current || !window.kakao) return;
 
-        // 0. 라이브러리 로드 체크
-        if (!window.kakao || !window.kakao.maps.MarkerClusterer) {
-            console.error("🔥 [Critical] Clusterer Library Missing! Check Script URL.");
-            return;
-        }
-
-        // 1. 클러스터러가 없으면 생성 (최초 1회)
+        // 1. 클러스터러 초기화
         if (!clustererRef.current) {
             clustererRef.current = new window.kakao.maps.MarkerClusterer({
                 map: mapRef.current,
                 averageCenter: true,
-                minLevel: 6, // 이 레벨보다 줌이 당겨지면 마커가 펼쳐짐
+                minLevel: 6,
                 gridSize: 60,
-                disableClickZoom: false // 클러스터 클릭 시 줌인
+                disableClickZoom: false,
             });
         }
 
-        // 2. 데이터가 있고 스위치가 켜져있으면 렌더링
-        if (activeLayers.cctv && cctvData.length > 0) {
-            console.warn(`🎨 [클러스터링] 마커 ${cctvData.length}개 그룹화 시작`);
+        // 2. 기존 마커 비우기
+        clustererRef.current.clear();
 
-            // 기존 마커 비우기
-            clustererRef.current.clear();
+        // 🚨 핵심 수정: 루프 밖에서 인포윈도우를 하나만 생성 (전역 관리 효과)
+        const infowindow = new window.kakao.maps.InfoWindow({ zIndex: 100 });
+
+        // 3. 데이터 렌더링
+        if (activeLayers.cctv && cctvData.length > 0) {
 
             const markers = cctvData.map((cctv) => {
-                // 마커 이미지 설정 (파란색 별 or 기본 마커)
-                const imageSrc = "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png";
-                const imageSize = new window.kakao.maps.Size(24, 35);
-                const markerImage = new window.kakao.maps.MarkerImage(imageSrc, imageSize);
-
-                // 마커 생성
                 const marker = new window.kakao.maps.Marker({
                     position: new window.kakao.maps.LatLng(cctv.lat, cctv.lng),
-                    title: cctv.purpose, // 마우스를 올리면 용도 표시
-                    image: markerImage
+                    // 아이콘은 일단 기본값 유지 (기능 우선)
                 });
 
-                // 클릭 이벤트 (Alert)
-                window.kakao.maps.event.addListener(marker, 'click', () => {
-                    alert(`📹 CCTV 정보\n주소: ${cctv.address || '주소 미상'}\n용도: ${cctv.purpose || '방범용'}`);
+                // 🐭 마우스 오버: 내용 채우고 열기
+                window.kakao.maps.event.addListener(marker, 'mouseover', function () {
+                    const content = `
+              <div style="padding:5px 10px; font-size:12px; background:white; border:1px solid #ccc; white-space:nowrap; color:black;">
+                <span style="font-weight:bold; color:#0052cc;">📹 ${cctv.purpose}</span><br>
+                <span style="color:#666; font-size:11px;">${cctv.address || '주소 정보 없음'}</span>
+              </div>
+            `;
+                    infowindow.setContent(content);
+                    infowindow.open(mapRef.current, marker);
+                });
+
+                // 🐭 마우스 아웃: 무조건 닫기
+                window.kakao.maps.event.addListener(marker, 'mouseout', function () {
+                    infowindow.close();
                 });
 
                 return marker;
             });
 
-            // 클러스터러에 마커 일괄 등록
+            // 클러스터러에 추가
             clustererRef.current.addMarkers(markers);
-            console.log(`✅ [클러스터링] 마커 ${markers.length}개 등록 완료`);
-
-        } else {
-            // 스위치 꺼지면 클러스터 비우기
-            if (clustererRef.current) {
-                clustererRef.current.clear();
-            }
         }
     }, [cctvData, activeLayers.cctv]);
+
+
+    // ✅ 지도 이동/줌 변경 시 데이터 자동 갱신 (Debounce 적용)
+    useEffect(() => {
+        if (!mapRef.current) return;
+        const map = mapRef.current;
+
+        const handleMapUpdate = () => {
+            // CCTV 레이어가 켜져 있을 때만 작동
+            if (activeLayers.cctv) {
+                if (mapDebounceTimer.current) {
+                    clearTimeout(mapDebounceTimer.current);
+                }
+
+                // 0.5초 동안 추가 움직임이 없으면 데이터 요청 (서버 부하 방지)
+                mapDebounceTimer.current = setTimeout(() => {
+                    console.log("🔄 [지도 이동] CCTV 데이터 재요청...");
+                    fetchCCTVData();
+                }, 500);
+            }
+        };
+
+        if (activeLayers.cctv) {
+            // 이벤트 등록
+            window.kakao.maps.event.addListener(map, 'dragend', handleMapUpdate);
+            window.kakao.maps.event.addListener(map, 'zoom_changed', handleMapUpdate);
+        }
+
+        // 뒷정리 (Cleanup): 스위치를 끄거나 페이지를 나가면 이벤트 해제
+        return () => {
+            window.kakao.maps.event.removeListener(map, 'dragend', handleMapUpdate);
+            window.kakao.maps.event.removeListener(map, 'zoom_changed', handleMapUpdate);
+        };
+    }, [activeLayers.cctv]); // 스위치 상태가 바뀔 때마다 리스너 재설정
 
 
     // ----------------------------------------------------------------------
