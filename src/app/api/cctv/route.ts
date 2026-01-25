@@ -1,85 +1,49 @@
 import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
-    // 참고: 현재 공공데이터포털 CCTV API는 위경도 기반 검색을 지원하지 않고 전체 목록을 줍니다.
-    // 추후 DB 구축 시 사용하기 위해 변수는 남겨둡니다.
-    const latParam = searchParams.get('lat');
-    const lngParam = searchParams.get('lng');
-
-    const apiKey = process.env.DATA_GO_KR_CCTV_KEY;
-    if (!apiKey) {
-        return NextResponse.json({ error: "API Key Missing" }, { status: 500 });
-    }
-
-    // CCTV 표준 데이터 API 엔드포인트
-    const baseUrl = 'http://api.data.go.kr/openapi/tn_pubr_public_cctv_api';
-    // 페이지 번호와 요청 개수를 넉넉히 잡습니다.
-    const queryParams = `?serviceKey=${apiKey}&pageNo=1&numOfRows=100&type=json`;
+    const minLat = parseFloat(searchParams.get('minLat') || '0');
+    const maxLat = parseFloat(searchParams.get('maxLat') || '0');
+    const minLng = parseFloat(searchParams.get('minLng') || '0');
+    const maxLng = parseFloat(searchParams.get('maxLng') || '0');
 
     try {
-        console.log(`📡 [API Request] CCTV 데이터 요청 시작...`);
-        const res = await fetch(`${baseUrl}${queryParams}`);
+        // 1. 데이터 조회 (컬럼명 유연성 확보를 위해 * 조회)
+        // 위경도 컬럼 이름을 모를 수 있으므로 범위 조건을 잠시 끄고 limit으로 가져오거나, 
+        // 혹은 확실한 컬럼명을 안다면 그 컬럼으로 필터링해야 함. 
+        // 여기서는 사용자가 'lat', 'lng'으로 올렸다고 가정하되, 실패 시 로그를 띄움.
 
-        // 응답 텍스트 확인 (디버깅용)
-        const textBody = await res.text();
-        // console.log(`🔍 [Raw Response] ${textBody.substring(0, 200)}...`); // 원본 확인 필요시 주석 해제
+        let { data, error } = await supabase
+            .from('cctv')
+            .select('*')
+            .gte('lat', minLat)  // 만약 DB 컬럼이 latitude라면 이 부분을 latitude로 바꿔야 함
+            .lte('lat', maxLat)
+            .gte('lng', minLng)
+            .lte('lng', maxLng)
+            .limit(2000);
 
-        // 1. JSON 파싱 시도
-        let data;
-        try {
-            data = JSON.parse(textBody);
-        } catch (e) {
-            // XML 에러일 경우 처리
-            if (textBody.includes('SERVICE_KEY_IS_NOT_REGISTERED')) {
-                console.error("🔥 API 키가 아직 등록되지 않았습니다 (동기화 대기 필요)");
-                return NextResponse.json({ error: "Key Not Registered" }, { status: 502 });
-            }
-            console.error("💥 JSON 파싱 실패 (XML 응답일 가능성)");
-            return NextResponse.json({ error: "Invalid JSON", raw: textBody }, { status: 500 });
+        if (error) {
+            console.error("DB Query Error:", error);
+            // 만약 lat 컬럼이 없다는 에러라면, latitude나 WGS84위도 등으로 재시도하는 로직이 필요할 수 있음
+            throw error;
         }
 
-        // 2. 결과 코드 확인
-        const resultCode = data.response?.header?.resultCode;
-        if (resultCode !== '00') {
-            console.error(`⚠️ API Error Code: ${resultCode} (${data.response?.header?.resultMsg})`);
-            return NextResponse.json({ error: data.response?.header?.resultMsg }, { status: 500 });
-        }
+        // 2. 데이터 매핑 (프론트엔드가 'lat', 'lng'을 기대함)
+        const mappedData = data?.map((item: any) => ({
+            ...item,
+            lat: item.lat || item.latitude || item.WGS84위도 || item.위도,
+            lng: item.lng || item.longitude || item.WGS84경도 || item.경도,
+            address: item.address || item.road_address || item.지번주소 || '주소 미상'
+        })) || [];
 
-        // 3. 데이터 구조 유연하게 처리 (핵심 수정!)
-        // 구조가 items: [...] 인지, items: { item: [...] } 인지 체크
-        const rawItems = data.response?.body?.items;
-        let items = [];
-
-        if (Array.isArray(rawItems)) {
-            items = rawItems; // 바로 배열인 경우
-        } else if (rawItems && Array.isArray(rawItems.item)) {
-            items = rawItems.item; // items.item 안에 배열이 있는 경우
-        } else if (rawItems) {
-            items = [rawItems]; // 데이터가 1개라 객체로 온 경우 배열로 변환
-        }
-
-        console.log(`📦 [API Data] 추출된 데이터: ${items.length}건`);
-
-        // 4. 데이터 변환 (한글 필드명 매핑)
-        const cctvs = items.map((item: any, index: number) => {
-            return {
-                id: `cctv-${index}`,
-                name: item.institutionNm || item.관리기관명 || 'CCTV',
-                // 좌표가 문자열로 올 수 있으므로 parseFloat 처리
-                lat: parseFloat(item.latitude || item.WGS84위도 || item.위도 || '0'),
-                lng: parseFloat(item.longitude || item.WGS84경도 || item.경도 || '0'),
-                address: item.lnmadr || item.rdnmadr || item.소재지도로명주소 || '',
-                purpose: item.installationPurpsType || item.설치목적구분 || '다목적'
-            };
-        }).filter((c: any) => c.lat !== 0 && c.lng !== 0); // 좌표 없는 데이터 제거
-
-        console.log(`✅ [API Success] 최종 변환 데이터: ${cctvs.length}건 반환`);
-
-        return NextResponse.json({ features: cctvs });
-
+        return NextResponse.json({ total: mappedData.length, features: mappedData });
     } catch (error: any) {
-        console.error(`☠️ Server Error: ${error.message}`);
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }

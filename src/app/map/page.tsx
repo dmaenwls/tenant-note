@@ -141,7 +141,8 @@ export default function MapPage() {
     // Map Objects References 
     const markersRef = useRef<any[]>([]);
     const layerObjectsRef = useRef<any[]>([]);
-    const cctvMarkersRef = useRef<any[]>([]);
+    const clustererRef = useRef<any>(null); // ✅ 클러스터러 Ref 추가
+    const cctvMarkersRef = useRef<any[]>([]); // (To be removed or unused)
 
     const polygonsRef = useRef<any[]>([]);
 
@@ -211,70 +212,106 @@ export default function MapPage() {
     // API HANDLERS (CCTV)
     // ----------------------------------------------------------------------
     const fetchCCTVData = async () => {
-        if (!mapRef.current) return;
+        console.warn("🚨 [DEBUG] 3. fetchCCTVData 함수 진입 성공!");
 
-        console.log("📡 [CCTV] 데이터 요청 준비...");
-        const center = mapRef.current.getCenter();
-        const lat = center.getLat();
-        const lng = center.getLng();
+        if (!mapRef.current) {
+            console.error("❌ [DEBUG] 지도가 아직 로드되지 않아 500ms 후 재시도합니다.");
+            setTimeout(fetchCCTVData, 500);
+            return;
+        }
+
+        const bounds = mapRef.current.getBounds();
+        const sw = bounds.getSouthWest();
+        const ne = bounds.getNorthEast();
+
+        console.log(`📡 [API 요청] 좌표 범위: (${sw.getLat()}, ${sw.getLng()}) ~ (${ne.getLat()}, ${ne.getLng()})`);
 
         try {
-            console.log(`📡 [CCTV] API 호출: /api/cctv?lat=${lat}&lng=${lng}`);
-            const res = await fetch(`/api/cctv?lat=${lat}&lng=${lng}`);
+            const res = await fetch(
+                `/api/cctv?minLat=${sw.getLat()}&maxLat=${ne.getLat()}&minLng=${sw.getLng()}&maxLng=${ne.getLng()}`
+            );
+            const json = await res.json();
+            console.warn(`📦 [API 응답] 받아온 데이터 개수: ${json.features?.length || 0}개`);
 
-            if (!res.ok) {
-                console.error(`🔥 [CCTV] API Error Status: ${res.status}`);
-                return;
+            if (json.features) {
+                setCctvData(json.features);
             }
-
-            const data = await res.json();
-
-            if (data.error) {
-                console.error(`🔥 [CCTV] Server Error: ${data.error}`);
-                alert(`CCTV 데이터를 불러오지 못했습니다: ${data.error}`);
-                return;
-            }
-
-            const features = data.features || [];
-            console.log(`📦 [CCTV] 데이터 수신 완료: ${features.length}건`);
-
-            if (features.length === 0) {
-                alert("주변에 조회된 CCTV가 없습니다. (데이터가 0건입니다)");
-            }
-
-            setCctvData(features);
-
         } catch (err) {
-            console.error("☠️ [CCTV] Network Error:", err);
-            alert("CCTV 데이터 요청 중 네트워크 에러가 발생했습니다.");
+            console.error("🔥 [API 에러]", err);
         }
     };
 
     // Debounce Ref for Map Movement
     const mapDebounceTimer = useRef<NodeJS.Timeout | null>(null);
 
+    // ✅ 1. 버튼이 켜지면 무조건 데이터부터 가져온다. (Trigger)
     useEffect(() => {
-        if (!mapRef.current) return;
-        const map = mapRef.current;
-
-        const handleMapUpdate = () => {
-            if (activeLayers.cctv) {
-                if (mapDebounceTimer.current) clearTimeout(mapDebounceTimer.current);
-                mapDebounceTimer.current = setTimeout(() => {
-                    fetchCCTVData();
-                }, 500); // 0.5s Debounce
-            }
-        };
-
-        kakao.maps.event.addListener(map, 'dragend', handleMapUpdate);
-        kakao.maps.event.addListener(map, 'zoom_changed', handleMapUpdate);
-
-        // Initial Fetch when layer becomes active
-        if (activeLayers.cctv && cctvData.length === 0) {
+        if (activeLayers.cctv) {
+            console.warn("🚨 [DEBUG] 2-1. CCTV 레이어 활성화 감지 -> 데이터 요청 시작");
             fetchCCTVData();
         }
-    }, [activeLayers.cctv]); // Re-bind if layer toggles
+    }, [activeLayers.cctv]);
 
+    // ✅ 2. 데이터가 들어오면 지도에 그린다. (Renderer with Clusterer)
+    useEffect(() => {
+        if (!mapRef.current) return;
+
+        // 0. 라이브러리 로드 체크
+        if (!window.kakao || !window.kakao.maps.MarkerClusterer) {
+            console.error("🔥 [Critical] Clusterer Library Missing! Check Script URL.");
+            return;
+        }
+
+        // 1. 클러스터러가 없으면 생성 (최초 1회)
+        if (!clustererRef.current) {
+            clustererRef.current = new window.kakao.maps.MarkerClusterer({
+                map: mapRef.current,
+                averageCenter: true,
+                minLevel: 6, // 이 레벨보다 줌이 당겨지면 마커가 펼쳐짐
+                gridSize: 60,
+                disableClickZoom: false // 클러스터 클릭 시 줌인
+            });
+        }
+
+        // 2. 데이터가 있고 스위치가 켜져있으면 렌더링
+        if (activeLayers.cctv && cctvData.length > 0) {
+            console.warn(`🎨 [클러스터링] 마커 ${cctvData.length}개 그룹화 시작`);
+
+            // 기존 마커 비우기
+            clustererRef.current.clear();
+
+            const markers = cctvData.map((cctv) => {
+                // 마커 이미지 설정 (파란색 별 or 기본 마커)
+                const imageSrc = "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png";
+                const imageSize = new window.kakao.maps.Size(24, 35);
+                const markerImage = new window.kakao.maps.MarkerImage(imageSrc, imageSize);
+
+                // 마커 생성
+                const marker = new window.kakao.maps.Marker({
+                    position: new window.kakao.maps.LatLng(cctv.lat, cctv.lng),
+                    title: cctv.purpose, // 마우스를 올리면 용도 표시
+                    image: markerImage
+                });
+
+                // 클릭 이벤트 (Alert)
+                window.kakao.maps.event.addListener(marker, 'click', () => {
+                    alert(`📹 CCTV 정보\n주소: ${cctv.address || '주소 미상'}\n용도: ${cctv.purpose || '방범용'}`);
+                });
+
+                return marker;
+            });
+
+            // 클러스터러에 마커 일괄 등록
+            clustererRef.current.addMarkers(markers);
+            console.log(`✅ [클러스터링] 마커 ${markers.length}개 등록 완료`);
+
+        } else {
+            // 스위치 꺼지면 클러스터 비우기
+            if (clustererRef.current) {
+                clustererRef.current.clear();
+            }
+        }
+    }, [cctvData, activeLayers.cctv]);
 
 
     // ----------------------------------------------------------------------
@@ -382,6 +419,7 @@ export default function MapPage() {
 
     // Re-render Layers (Noise, Academy, Hill, CCTV, Polygon)
     useEffect(() => {
+        console.warn("🚨 [DEBUG] 2. Effect 감지됨! ActiveLayers:", activeLayers);
         if (!mapRef.current) return;
         const { kakao } = window;
         const map = mapRef.current;
@@ -389,8 +427,7 @@ export default function MapPage() {
         // 1. Clear Existing Overlays
         layerObjectsRef.current.forEach(obj => obj.setMap(null));
         layerObjectsRef.current = [];
-        cctvMarkersRef.current.forEach(m => m.setMap(null));
-        cctvMarkersRef.current = [];
+        // cctvMarkersRef cleanup removed (Handled by Clusterer Ref)
         polygonsRef.current.forEach(p => p.setMap(null));
         polygonsRef.current = [];
 
@@ -636,39 +673,8 @@ export default function MapPage() {
             });
         }
 
-        // 5. Draw CCTV (Real Data)
-        if (activeLayers.cctv) {
-            cctvData.forEach(cctv => {
-                const content = document.createElement('div');
-                content.className = 'group relative cursor-pointer';
-                // Marker: Blue Circle with Camera Count
-                content.innerHTML = `
-                    <div class="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 shadow-lg border-2 border-white text-white font-bold text-[10px] hover:bg-blue-700 transition-colors">
-                        <i class="fa-solid fa-video mr-1"></i>${cctv.count}
-                    </div>
-                `;
-
-                // Tooltip (Simple HTML Title logic or Custom Overlay on hover)
-                // Using Title for simplicity or Custom logic if needed. 
-                // Let's add a simple tooltip div inside that shows on hover via CSS
-                const tooltipInfo = `
-                    <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-2 py-1 bg-gray-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                        ${cctv.name}<br>
-                        목적: ${cctv.purpose}
-                    </div>
-                `;
-                content.innerHTML += tooltipInfo;
-
-                const overlay = new kakao.maps.CustomOverlay({
-                    position: new kakao.maps.LatLng(cctv.lat, cctv.lng),
-                    content: content,
-                    yAnchor: 1.2,
-                    zIndex: 30
-                });
-                overlay.setMap(map);
-                cctvMarkersRef.current.push(overlay);
-            });
-        }
+        // 5. Draw CCTV (Real Data) - Moved to separate Clusterer Efffect
+        // verify clean up logic is handled in the separate effect
 
         // 6. Draw Polygons (Administrative District)
         if (activeLayers.polygon) {
@@ -772,6 +778,7 @@ export default function MapPage() {
 
 
     const toggleLayer = (layerName: string) => {
+        console.warn("🚨 [DEBUG] 1. 버튼 클릭 감지됨! Layer:", layerName);
         setActiveLayers(prev => ({
             ...prev,
             [layerName]: !prev[layerName as keyof typeof prev]
@@ -1104,6 +1111,7 @@ export default function MapPage() {
     // ----------------------------------------------------------------------
     return (
         <div className="flex flex-col h-[calc(100vh-64px)] overflow-hidden bg-white">
+            {/* ⚠️ [Required] libraries=services,clusterer is essential for MarkerClusterer */}
             <Script
                 src="//dapi.kakao.com/v2/maps/sdk.js?appkey=693e61b56c8dfdcac6b196b6fa46e513&libraries=services,clusterer,drawing&autoload=false"
                 strategy="afterInteractive"
