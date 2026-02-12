@@ -1,3 +1,7 @@
 geopandas
 pandas
 shapely
+PublicDataReader
+supabase
+python-dotenv
+requests

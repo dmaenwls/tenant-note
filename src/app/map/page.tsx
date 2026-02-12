@@ -137,12 +137,15 @@ export default function MapPage() {
     const [listings, setListings] = useState<any[]>([]);
     const [seoulGeoJson, setSeoulGeoJson] = useState<any>(null); // GeoJSON Data
     const [cctvData, setCctvData] = useState<any[]>([]); // Real CCTV Data
+    const [rentListings, setRentListings] = useState<any[]>([]); // 🏠 실거래가 전월세 데이터
+    const [isLoadingRents, setIsLoadingRents] = useState(false);
 
     // Map Objects References 
     const markersRef = useRef<any[]>([]);
     const layerObjectsRef = useRef<any[]>([]);
     const clustererRef = useRef<any>(null); // ✅ 클러스터러 Ref 추가
     const cctvMarkersRef = useRef<any[]>([]); // (To be removed or unused)
+    const rentMarkersRef = useRef<any[]>([]); // 🏠 전월세 마커 Ref
 
     const polygonsRef = useRef<any[]>([]);
 
@@ -252,6 +255,44 @@ export default function MapPage() {
         }
     };
 
+    // ----------------------------------------------------------------------
+    // API HANDLERS (전월세 실거래가)
+    // ----------------------------------------------------------------------
+    const fetchRentListings = async () => {
+        if (!mapRef.current) return;
+
+        const level = mapRef.current.getLevel();
+        // 줌 레벨 7 이상(넓은 지역)이면 요청 안 함
+        if (level > 6) {
+            console.warn('⚠️ 범위가 너무 넓습니다. 전월세 데이터를 비웁니다.');
+            setRentListings([]);
+            return;
+        }
+
+        const bounds = mapRef.current.getBounds();
+        const sw = bounds.getSouthWest();
+        const ne = bounds.getNorthEast();
+
+        setIsLoadingRents(true);
+        console.log(`🏠 [전월세 API 요청] 좌표: (${sw.getLat()}, ${sw.getLng()}) ~ (${ne.getLat()}, ${ne.getLng()})`);
+
+        try {
+            const res = await fetch(
+                `/api/listings?minLat=${sw.getLat()}&maxLat=${ne.getLat()}&minLng=${sw.getLng()}&maxLng=${ne.getLng()}`
+            );
+            const json = await res.json();
+            console.log(`🏠 [전월세 API 응답] ${json.total || 0}건 수신`);
+
+            if (json.listings) {
+                setRentListings(json.listings);
+            }
+        } catch (err) {
+            console.error('🔥 [전월세 API 에러]', err);
+        } finally {
+            setIsLoadingRents(false);
+        }
+    };
+
     // Debounce Ref for Map Movement
     const mapDebounceTimer = useRef<NodeJS.Timeout | null>(null);
 
@@ -352,6 +393,32 @@ export default function MapPage() {
         };
     }, [activeLayers.cctv]); // 스위치 상태가 바뀔 때마다 리스너 재설정
 
+    // ✅ 전월세 데이터: 지도 이동/줌 변경 시 자동 갱신 (항상 활성)
+    const rentDebounceTimer = useRef<NodeJS.Timeout | null>(null);
+
+    useEffect(() => {
+        if (!mapRef.current || !window.kakao) return;
+        const map = mapRef.current;
+
+        const handleRentMapUpdate = () => {
+            if (rentDebounceTimer.current) {
+                clearTimeout(rentDebounceTimer.current);
+            }
+            rentDebounceTimer.current = setTimeout(() => {
+                console.log('🔄 [지도 이동] 전월세 데이터 재요청...');
+                fetchRentListings();
+            }, 500);
+        };
+
+        window.kakao.maps.event.addListener(map, 'dragend', handleRentMapUpdate);
+        window.kakao.maps.event.addListener(map, 'zoom_changed', handleRentMapUpdate);
+
+        return () => {
+            window.kakao.maps.event.removeListener(map, 'dragend', handleRentMapUpdate);
+            window.kakao.maps.event.removeListener(map, 'zoom_changed', handleRentMapUpdate);
+        };
+    }, [isMapLoaded]);
+
 
     // ----------------------------------------------------------------------
     // EFFECTS
@@ -397,6 +464,9 @@ export default function MapPage() {
             .then(res => res.json())
             .then(data => setSeoulGeoJson(data))
             .catch(err => console.error("Failed to load slope data:", err));
+
+        // 🏠 초기 전월세 데이터 로드
+        setTimeout(() => fetchRentListings(), 500);
 
     }, [isMapLoaded]);
 
@@ -455,6 +525,61 @@ export default function MapPage() {
             markersRef.current.push(customOverlay);
         });
     }, [listings, isPyeong, activeLayers.reviews]); // Depend on reviews layer
+
+    // 🏠 전월세 마커 렌더링 Effect
+    useEffect(() => {
+        if (!mapRef.current || !window.kakao) return;
+        const mapInstance = mapRef.current;
+
+        // 기존 전월세 마커 제거
+        rentMarkersRef.current.forEach(m => m.setMap(null));
+        rentMarkersRef.current = [];
+
+        rentListings.forEach((item) => {
+            if (!item.lat || !item.lng) return;
+
+            const position = new window.kakao.maps.LatLng(item.lat, item.lng);
+            const content = document.createElement('div');
+
+            // 전세 vs 월세 마커 색상 분리
+            const isJeonse = item.contract_type === '전세';
+            const bgClass = isJeonse ? 'bg-emerald-500' : 'bg-sky-500';
+            const borderClass = isJeonse ? 'border-emerald-700' : 'border-sky-700';
+
+            // 가격 포맷팅 (만원 단위)
+            const formatMoney = (amount: number) => {
+                if (amount >= 10000) return `${(amount / 10000).toFixed(amount % 10000 === 0 ? 0 : 1)}억`;
+                return `${amount}`;
+            };
+
+            let priceLabel = '';
+            if (isJeonse) {
+                priceLabel = `전세 ${formatMoney(item.deposit)}`;
+            } else {
+                priceLabel = `${formatMoney(item.deposit)}/${item.monthly_rent}`;
+            }
+
+            content.className = `listing-marker ${bgClass} ${borderClass} text-white`;
+            content.style.cssText = 'cursor:pointer; padding:4px 8px; border-radius:20px; font-size:11px; font-weight:bold; border-width:2px; white-space:nowrap; box-shadow:0 2px 6px rgba(0,0,0,0.2);';
+            content.innerHTML = `
+                ${priceLabel}
+                <i class="fa-solid fa-chevron-right" style="font-size:9px; margin-left:4px; opacity:0.7;"></i>
+            `;
+
+            content.onclick = () => {
+                showRentDetail(item);
+            };
+
+            const customOverlay = new window.kakao.maps.CustomOverlay({
+                position: position,
+                content: content,
+                yAnchor: 1,
+            });
+
+            customOverlay.setMap(mapInstance);
+            rentMarkersRef.current.push(customOverlay);
+        });
+    }, [rentListings]);
 
     // Re-render Layers (Noise, Academy, Hill, CCTV, Polygon)
     useEffect(() => {
@@ -835,6 +960,22 @@ export default function MapPage() {
         }
     };
 
+    // 🏠 전월세 매물 상세 보기
+    const showRentDetail = (item: any) => {
+        setSelectedZone(null);
+        setSelectedListing({
+            ...item,
+            _isRent: true, // 전월세 데이터 표시 플래그
+            title: item.building_name || `${item.jibun}`,
+        });
+        setSidebarOpen(true);
+
+        if (mapRef.current) {
+            const moveLatLon = new window.kakao.maps.LatLng(item.lat, item.lng);
+            mapRef.current.panTo(moveLatLon);
+        }
+    };
+
     const handleZoneClick = (zoneData: any) => {
         setSelectedListing(null); // Clear listing selection
         setSelectedZone(zoneData);
@@ -953,8 +1094,102 @@ export default function MapPage() {
         </div>
     );
 
+    // 🏠 전월세 상세 패널 렌더링
+    const renderRentDetailView = () => {
+        if (!selectedListing) return null;
+        const item = selectedListing;
+        const isJeonse = item.contract_type === '전세';
+
+        const formatMoney = (amount: number) => {
+            if (!amount) return '0';
+            if (amount >= 10000) return `${(amount / 10000).toFixed(amount % 10000 === 0 ? 0 : 1)}억`;
+            return `${amount.toLocaleString()}만원`;
+        };
+
+        return (
+            <div className="animate-fade-in-up">
+                <div className="p-4 space-y-4">
+                    {/* 가격 헤더 */}
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div className={`p-5 ${isJeonse ? 'bg-gradient-to-r from-emerald-500 to-emerald-600' : 'bg-gradient-to-r from-sky-500 to-sky-600'} text-white`}>
+                            <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold mb-2 ${isJeonse ? 'bg-emerald-400/30' : 'bg-sky-400/30'}`}>
+                                {isJeonse ? '전세' : '월세'}
+                            </span>
+                            <h2 className="text-2xl font-bold mb-1">
+                                {isJeonse ? (
+                                    <>보증금 {formatMoney(item.deposit)}</>
+                                ) : (
+                                    <>{formatMoney(item.deposit)} / 월 {item.monthly_rent?.toLocaleString()}만원</>
+                                )}
+                            </h2>
+                            <p className="text-sm opacity-80">{item.title}</p>
+                        </div>
+
+                        <div className="p-5 space-y-3">
+                            {/* 건물 정보 그리드 */}
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="bg-slate-50 p-3 rounded-xl">
+                                    <span className="block text-[10px] text-slate-400 mb-0.5">🏢 건물명</span>
+                                    <span className="font-bold text-sm text-slate-800">{item.building_name || '-'}</span>
+                                </div>
+                                <div className="bg-slate-50 p-3 rounded-xl">
+                                    <span className="block text-[10px] text-slate-400 mb-0.5">📍 지번</span>
+                                    <span className="font-bold text-sm text-slate-800">{item.jibun || '-'}</span>
+                                </div>
+                                <div className="bg-slate-50 p-3 rounded-xl">
+                                    <span className="block text-[10px] text-slate-400 mb-0.5">🏗️ 층</span>
+                                    <span className="font-bold text-sm text-slate-800">{item.floor ? `${item.floor}층` : '-'}</span>
+                                </div>
+                                <div className="bg-slate-50 p-3 rounded-xl">
+                                    <span className="block text-[10px] text-slate-400 mb-0.5">📐 면적</span>
+                                    <span className="font-bold text-sm text-slate-800">
+                                        {item.area_m2 ? `${item.area_m2}㎡ (${(item.area_m2 * 0.3025).toFixed(1)}평)` : '-'}
+                                    </span>
+                                </div>
+                                <div className="bg-slate-50 p-3 rounded-xl">
+                                    <span className="block text-[10px] text-slate-400 mb-0.5">🗓️ 건축년도</span>
+                                    <span className="font-bold text-sm text-slate-800">{item.build_year ? `${item.build_year}년` : '-'}</span>
+                                </div>
+                                <div className="bg-slate-50 p-3 rounded-xl">
+                                    <span className="block text-[10px] text-slate-400 mb-0.5">📝 계약일</span>
+                                    <span className="font-bold text-sm text-slate-800">{item.contract_date || '-'}</span>
+                                </div>
+                            </div>
+
+                            {/* 가격 상세 */}
+                            <div className={`p-4 rounded-xl border ${isJeonse ? 'bg-emerald-50 border-emerald-200' : 'bg-sky-50 border-sky-200'}`}>
+                                <h4 className="text-xs font-bold text-slate-600 mb-2">💰 가격 정보</h4>
+                                <div className="space-y-1">
+                                    <div className="flex justify-between">
+                                        <span className="text-xs text-slate-500">보증금</span>
+                                        <span className="text-sm font-bold text-slate-800">{formatMoney(item.deposit)}</span>
+                                    </div>
+                                    {!isJeonse && (
+                                        <div className="flex justify-between">
+                                            <span className="text-xs text-slate-500">월세</span>
+                                            <span className="text-sm font-bold text-slate-800">{item.monthly_rent?.toLocaleString()}만원</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* 지역코드 */}
+                            {item.region_code && (
+                                <div className="text-xs text-slate-400 text-center pt-2">
+                                    법정동 코드: {item.region_code}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     const renderDetailView = () => {
         if (!selectedListing) return null;
+        // 🏠 전월세 데이터인 경우 전용 렌더 사용
+        if (selectedListing._isRent) return renderRentDetailView();
         const item = selectedListing;
         const gradeColor = item.grade === 'A' ? "text-green-600 bg-green-50 border-green-200" : "text-yellow-600 bg-yellow-50 border-yellow-200";
         const gradeComment = item.grade === 'A' ? "안심하세요! 융자 비율과 권리 관계가 깨끗한 추천 매물입니다." : "주변 시세 대비 합리적입니다. 등기부등본을 한번 더 확인하세요.";
