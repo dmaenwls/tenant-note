@@ -377,45 +377,51 @@ def transform_rents(df: pd.DataFrame, property_type: str, region_code: str) -> l
     return records
 
 # ============================================================
-# 8. 중복 제거 (Pandas drop_duplicates)
+# 8. 중복 제거 (Pandas drop_duplicates — 강화판)
 # ============================================================
 def deduplicate_records(records: list[dict], trade_type: str) -> list[dict]:
-    """Pandas drop_duplicates로 강력한 중복 제거"""
+    """Pandas 기반 강력 중복 제거 + 타입 정규화"""
     if not records:
         return records
 
     df = pd.DataFrame(records)
     before_count = len(df)
 
-    # 타입 통일 (미세한 차이 방지)
+    # ── 1단계: 데이터 타입 강제 통일 ──
+    # 면적: float → 소수점 2자리 반올림 (부동소수점 오차 제거)
     if 'area_exclusive' in df.columns:
-        df['area_exclusive'] = pd.to_numeric(df['area_exclusive'], errors='coerce').fillna(0).astype(float)
-    if 'floor' in df.columns:
-        df['floor'] = pd.to_numeric(df['floor'], errors='coerce').fillna(0).astype(int)
-    if 'build_year' in df.columns:
-        df['build_year'] = pd.to_numeric(df['build_year'], errors='coerce').fillna(0).astype(int)
+        df['area_exclusive'] = pd.to_numeric(df['area_exclusive'], errors='coerce').fillna(0.0).round(2)
 
-    # 거래 유형별 중복 기준 컬럼
+    # 정수 컬럼: int 변환 (NaN → 0)
+    int_cols = ['floor', 'build_year', 'deal_amount', 'deposit', 'monthly_rent']
+    for col in int_cols:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0).astype(int)
+
+    # 문자열 컬럼: strip
+    str_cols = ['building_name', 'jibun', 'contract_date', 'region_code']
+    for col in str_cols:
+        if col in df.columns:
+            df[col] = df[col].astype(str).str.strip()
+
+    # ── 2단계: 비즈니스 키 기준 중복 제거 ──
     if trade_type == "매매":
-        if 'deal_amount' in df.columns:
-            df['deal_amount'] = pd.to_numeric(df['deal_amount'], errors='coerce').fillna(0).astype(int)
-        subset_cols = ['contract_date', 'jibun', 'floor', 'area_exclusive', 'deal_amount', 'building_name']
+        subset_cols = ['contract_date', 'jibun', 'floor', 'area_exclusive', 'deal_amount']
     else:
-        if 'deposit' in df.columns:
-            df['deposit'] = pd.to_numeric(df['deposit'], errors='coerce').fillna(0).astype(int)
-        if 'monthly_rent' in df.columns:
-            df['monthly_rent'] = pd.to_numeric(df['monthly_rent'], errors='coerce').fillna(0).astype(int)
-        subset_cols = ['contract_date', 'jibun', 'floor', 'area_exclusive', 'deposit', 'monthly_rent', 'building_name']
+        subset_cols = ['contract_date', 'jibun', 'floor', 'area_exclusive', 'deposit', 'monthly_rent']
 
-    # 실제 존재하는 컬럼만 필터
     subset_cols = [c for c in subset_cols if c in df.columns]
-
     df.drop_duplicates(subset=subset_cols, keep='last', inplace=True)
-    after_count = len(df)
-    removed = before_count - after_count
+    mid_count = len(df)
 
+    # ── 3단계: id 기준 중복 제거 (ON CONFLICT 에러 원천 차단) ──
+    if 'id' in df.columns:
+        df.drop_duplicates(subset=['id'], keep='last', inplace=True)
+    after_count = len(df)
+
+    removed = before_count - after_count
     if removed > 0:
-        print(f"    🧹 강력 중복 제거: {before_count} → {after_count} ({removed}건 삭제)")
+        print(f"    🧹 중복 제거: 총 {before_count}건 → 비즈니스키 {mid_count}건 → ID기준 {after_count}건 ({removed}건 삭제)")
     else:
         print(f"    ✅ 중복 없음: {before_count}건 업로드 시작")
 
