@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Script from 'next/script';
 import Link from 'next/link';
 import {
@@ -33,41 +33,6 @@ const getPolygonCenter = (path: any[]) => {
 // DATA CONSTANTS (Restored from reviews.html)
 // ----------------------------------------------------------------------
 
-const MOCK_NOISE_ZONES = [
-    { center: { lat: 37.481, lng: 126.925 }, radius: 250, label: '🚗 대로변 소음 주의' },
-    { center: { lat: 37.485, lng: 126.921 }, radius: 150, label: '🚄 철도 소음 주의' }
-];
-const MOCK_ACADEMY_ZONES = [
-    { center: { lat: 37.478, lng: 126.952 }, radius: 300, label: '🎓 봉천동 학원가' }
-];
-
-
-const MOCK_ZONE_REPORT = {
-    name: "관악구 신림동",
-    grade: "B",
-    score: 78,
-    stats: {
-        police: 2,
-        cctv: "많음",
-        rentAvg: "500/40",
-        jeonseRisk: "85%"
-    },
-    report: {
-        safety: "유동인구가 많아 밤길 안전은 양호하나, 주취자 시비가 잦은 편입니다.",
-        infra: "편의점 밀집도가 서울시 최상위권이며, 1인 가구 맞춤 상권이 발달했습니다.",
-        traffic: "2호선 신림역 이용이 편리하나, 출퇴근 시간대 혼잡도가 매우 높습니다."
-    },
-    scores: {
-        security_safety: 70,
-        property_building: 60,
-        living_comfort: 80,
-        living_infra: 95,
-        traffic: 90,
-        environment: 60
-    }
-};
-
-
 
 const HOUSING_TYPE_LABELS: Record<string, string> = {
     'APT': '아파트',
@@ -76,13 +41,6 @@ const HOUSING_TYPE_LABELS: Record<string, string> = {
     'DD': '단독/다가구'
 };
 
-const MockData: any[] = [
-    { id: 1, title: "신림 현대아파트 101동", lat: 37.4765, lng: 126.9240, type: "APT", price: "전세 4.5억", grade: "A", slope: 0, reviewCount: 5, rating: 4.5, pros: "관리가 잘 되고 조용해요", swot: { s: ["치안 우수"], w: ["주차 부족"], o: ["재개발"], t: ["소음"] }, scores: { security_safety: 90, property_building: 80, living_comfort: 90, living_infra: 85, traffic: 80, environment: 70 }, size: 32, floor: "10층" },
-    { id: 2, title: "역삼 럭키 원룸", lat: 37.5000, lng: 127.0350, type: "OP", price: "월세 1000/60", grade: "B", slope: 2, reviewCount: 12, rating: 3.8, pros: "교통이 진짜 좋아요", swot: { s: ["교통 편리"], w: ["비싼 월세"], o: ["직주근접"], t: ["소음"] }, scores: { security_safety: 95, property_building: 60, living_comfort: 50, living_infra: 98, traffic: 95, environment: 40 }, size: 8, floor: "3층" },
-    { id: 3, title: "여의도 시범아파트", lat: 37.5200, lng: 126.9350, type: "APT", price: "매매 20억", grade: "A", slope: 0, reviewCount: 20, rating: 4.8, pros: "한강 뷰가 예술입니다", swot: { s: ["한강뷰"], w: ["재건축 이슈"], o: ["가치 상승"], t: ["규제"] }, scores: { security_safety: 90, property_building: 40, living_comfort: 95, living_infra: 85, traffic: 80, environment: 90 }, size: 45, floor: "15층" },
-    { id: 4, title: "홍대 입구 오피스텔", lat: 37.5575, lng: 126.9250, type: "OP", price: "전세 2억", grade: "B", slope: 5, reviewCount: 8, rating: 4.2, pros: "놀기 너무 좋아요", swot: { s: ["상권"], w: ["시끄러움"], o: ["젊음"], t: ["취객"] }, scores: { security_safety: 82, property_building: 85, living_comfort: 60, living_infra: 99, traffic: 95, environment: 50 }, size: 12, floor: "5층" },
-    { id: 5, title: "이태원 빌라", lat: 37.5340, lng: 126.9940, type: "YH", price: "월세 5000/150", grade: "C", slope: 15, reviewCount: 3, rating: 3.5, pros: "테라스가 있어요", swot: { s: ["감성"], w: ["언덕"], o: ["상권 확장"], t: ["접근성"] }, scores: { security_safety: 72, property_building: 50, living_comfort: 70, living_infra: 88, traffic: 60, environment: 60 }, size: 25, floor: "2층" }
-];
 
 declare global {
     interface Window {
@@ -122,10 +80,11 @@ export default function MapPage() {
     const [currentViewMode, setCurrentViewMode] = useState('total');
 
     // Filters
-    const [activeDealType, setActiveDealType] = useState('monthly');
+    const [activeDealType, setActiveDealType] = useState('all');
     const [activeHousingTypes, setActiveHousingTypes] = useState<string[]>(['APT', 'OP', 'YH', 'DD']);
     const [activeGrades, setActiveGrades] = useState<string[]>(['A', 'B', 'C', 'D']); // New: Property Grade Filter
     const [activeSize, setActiveSize] = useState('all');
+    const [activeYear, setActiveYear] = useState('all');
     const [budget, setBudget] = useState({
         depositMin: '',
         depositMax: '',
@@ -134,18 +93,21 @@ export default function MapPage() {
     });
 
     // Data State (Lazy Loaded)
-    const [listings, setListings] = useState<any[]>([]);
+    const [originalListings, setOriginalListings] = useState<any[]>([]); // 📦 필터 전 원본 데이터 (매매+전월세 통합)
+    const [listings, setListings] = useState<any[]>([]); // 🎯 필터 적용 후 화면 표시용
     const [seoulGeoJson, setSeoulGeoJson] = useState<any>(null); // GeoJSON Data
     const [cctvData, setCctvData] = useState<any[]>([]); // Real CCTV Data
-    const [rentListings, setRentListings] = useState<any[]>([]); // 🏠 실거래가 전월세 데이터
-    const [isLoadingRents, setIsLoadingRents] = useState(false);
+
+    const [isLoadingListings, setIsLoadingListings] = useState(false); // 매매 로딩
+    const [toastMessage, setToastMessage] = useState<string | null>(null); // 토스트 메시지
 
     // Map Objects References 
     const markersRef = useRef<any[]>([]);
     const layerObjectsRef = useRef<any[]>([]);
     const clustererRef = useRef<any>(null); // ✅ 클러스터러 Ref 추가
     const cctvMarkersRef = useRef<any[]>([]); // (To be removed or unused)
-    const rentMarkersRef = useRef<any[]>([]); // 🏠 전월세 마커 Ref
+
+
 
     const polygonsRef = useRef<any[]>([]);
 
@@ -256,16 +218,38 @@ export default function MapPage() {
     };
 
     // ----------------------------------------------------------------------
-    // API HANDLERS (전월세 실거래가)
+    // 가격 포맷 헬퍼 (만원 → "억/천" 표기)
     // ----------------------------------------------------------------------
-    const fetchRentListings = async () => {
+    const formatMoney = useCallback((amount: number) => {
+        if (!amount || amount === 0) return '0';
+        if (amount >= 10000) {
+            const eok = Math.floor(amount / 10000);
+            const rest = amount % 10000;
+            return rest > 0 ? `${eok}억${rest}` : `${eok}억`;
+        }
+        return `${amount}`;
+    }, []);
+
+    // 토스트 표시 헬퍼
+    const showToast = useCallback((msg: string, duration = 3000) => {
+        setToastMessage(msg);
+        setTimeout(() => setToastMessage(null), duration);
+    }, []);
+
+    // ----------------------------------------------------------------------
+    // API HANDLERS (매매 실거래가 — listings 메인 데이터)
+    // ----------------------------------------------------------------------
+    const fetchListings = useCallback(async () => {
         if (!mapRef.current) return;
 
         const level = mapRef.current.getLevel();
-        // 줌 레벨 7 이상(넓은 지역)이면 요청 안 함
+        const zoom = Math.max(1, 14 - level + 1); // 카카오 레벨 → 대략적 zoom 변환
+
+        // 줌 레벨 방어: 카카오 레벨 7 이상 (넓은 범위)이면 요청 안 함
         if (level > 6) {
-            console.warn('⚠️ 범위가 너무 넓습니다. 전월세 데이터를 비웁니다.');
-            setRentListings([]);
+            console.warn('⚠️ 범위가 너무 넓습니다. 매매 데이터를 비웁니다.');
+            setOriginalListings(prev => prev.filter(l => l.dealType !== 'sale'));
+            showToast('🔍 지도를 더 확대해주세요 — 매물이 표시됩니다.');
             return;
         }
 
@@ -273,25 +257,163 @@ export default function MapPage() {
         const sw = bounds.getSouthWest();
         const ne = bounds.getNorthEast();
 
-        setIsLoadingRents(true);
-        console.log(`🏠 [전월세 API 요청] 좌표: (${sw.getLat()}, ${sw.getLng()}) ~ (${ne.getLat()}, ${ne.getLng()})`);
+        setIsLoadingListings(true);
+        console.log(`🏢 [매매 API 요청] zoom:${zoom} 좌표: (${sw.getLat()}, ${sw.getLng()}) ~ (${ne.getLat()}, ${ne.getLng()})`);
 
         try {
             const res = await fetch(
-                `/api/listings?minLat=${sw.getLat()}&maxLat=${ne.getLat()}&minLng=${sw.getLng()}&maxLng=${ne.getLng()}`
+                `/api/listings?type=sales&minLat=${sw.getLat()}&maxLat=${ne.getLat()}&minLng=${sw.getLng()}&maxLng=${ne.getLng()}&zoom=${zoom}`
+            );
+            const json = await res.json();
+            console.log(`🏢 [매매 API 응답] ${json.total || 0}건 수신`);
+
+            if (json.listings) {
+                const mapped = json.listings.map((item: any) => {
+                    // 1. 거래 유형(dealType) 결정
+                    let dealType = 'jeonse';
+                    if (item.deal_amount > 0) dealType = 'sale';
+                    else if (item.monthly_rent > 0) dealType = 'monthly';
+
+                    // 2. 가격 객체 생성 (필터용)
+                    const price = {
+                        d: item.deal_amount || item.deposit || 0,
+                        r: item.monthly_rent || 0,
+                    };
+
+                    // 3. 주거 유형 추론
+                    let housingType = item.house_type || 'YH';
+                    if (item.building_name?.includes('아파트')) housingType = 'APT';
+                    else if (item.building_name?.includes('오피스텔')) housingType = 'OP';
+
+                    // 4. 가격 표시 문자열
+                    const priceLabel = dealType === 'sale'
+                        ? `매매 ${formatMoney(item.deal_amount)}`
+                        : dealType === 'jeonse'
+                            ? `전세 ${formatMoney(item.deposit)}`
+                            : `월세 ${formatMoney(item.deposit)}/${item.monthly_rent}`;
+
+                    return {
+                        ...item, // 원본 데이터 보존
+                        id: item.id,
+                        name: item.building_name || '이름 없음',
+                        title: item.building_name || '이름 없음',
+                        lat: item.lat,
+                        lng: item.lng,
+                        type: housingType,
+                        dealType,
+                        price,
+                        priceLabel,
+                        size: item.area_exclusive || 0,
+                        floor: item.floor ? `${item.floor}층` : '-',
+                        grade: item.grade || 'B',
+                        reviewCount: 0,
+                        rating: 0,
+                        scores: item.scores || { security_safety: 80, traffic: 80, living_comfort: 70, living_infra: 75, property_building: 65, environment: 70 },
+                        swot: item.swot || { s: [], w: [], o: [], t: [] },
+                    };
+                });
+                // 원본 데이터 갱신: 기존 전월세 유지 + 새 매매 교체
+                setOriginalListings(prev => [
+                    ...prev.filter(l => l.dealType !== 'sale'),
+                    ...mapped,
+                ]);
+            }
+        } catch (err) {
+            console.error('🔥 [매매 API 에러]', err);
+        } finally {
+            setIsLoadingListings(false);
+        }
+    }, [formatMoney, showToast]);
+
+    // ----------------------------------------------------------------------
+    // API HANDLERS (전월세 실거래가)
+    // ----------------------------------------------------------------------
+    const fetchRentListings = useCallback(async () => {
+        if (!mapRef.current) return;
+
+        const level = mapRef.current.getLevel();
+        const zoom = Math.max(1, 14 - level + 1);
+
+        // 줌 레벨 7 이상(넓은 지역)이면 요청 안 함
+        if (level > 6) {
+            console.warn('⚠️ 범위가 너무 넓습니다. 전월세 데이터를 비웁니다.');
+            setOriginalListings(prev => prev.filter(l => l.dealType === 'sale'));
+            return;
+        }
+
+        const bounds = mapRef.current.getBounds();
+        const sw = bounds.getSouthWest();
+        const ne = bounds.getNorthEast();
+
+        setIsLoadingListings(true);
+        console.log(`🏠 [전월세 API 요청] zoom:${zoom} 좌표: (${sw.getLat()}, ${sw.getLng()}) ~ (${ne.getLat()}, ${ne.getLng()})`);
+
+        try {
+            const res = await fetch(
+                `/api/listings?type=rent&minLat=${sw.getLat()}&maxLat=${ne.getLat()}&minLng=${sw.getLng()}&maxLng=${ne.getLng()}&zoom=${zoom}`
             );
             const json = await res.json();
             console.log(`🏠 [전월세 API 응답] ${json.total || 0}건 수신`);
 
             if (json.listings) {
-                setRentListings(json.listings);
+                const mapped = json.listings.map((item: any) => {
+                    // 1. 거래 유형(dealType) 결정
+                    let dealType = 'jeonse';
+                    if (item.deal_amount > 0) dealType = 'sale';
+                    else if (item.monthly_rent > 0) dealType = 'monthly';
+
+                    // 2. 가격 객체 생성 (필터용)
+                    const price = {
+                        d: item.deal_amount || item.deposit || 0,
+                        r: item.monthly_rent || 0,
+                    };
+
+                    // 3. 주거 유형 추론
+                    let housingType = item.house_type || 'YH';
+                    if (item.building_name?.includes('아파트')) housingType = 'APT';
+                    else if (item.building_name?.includes('오피스텔')) housingType = 'OP';
+
+                    // 4. 가격 표시 문자열
+                    const priceLabel = dealType === 'sale'
+                        ? `매매 ${formatMoney(item.deal_amount)}`
+                        : dealType === 'jeonse'
+                            ? `전세 ${formatMoney(item.deposit)}`
+                            : `월세 ${formatMoney(item.deposit)}/${item.monthly_rent}`;
+
+                    return {
+                        ...item, // 원본 데이터 보존
+                        id: item.id,
+                        name: item.building_name || '이름 없음',
+                        title: item.building_name || '이름 없음',
+                        lat: item.lat,
+                        lng: item.lng,
+                        type: housingType,
+                        dealType,
+                        price,
+                        priceLabel,
+                        size: item.area_exclusive || 0,
+                        floor: item.floor ? `${item.floor}층` : '-',
+                        grade: item.grade || 'B',
+                        contract_type: dealType === 'jeonse' ? '전세' : (dealType === 'monthly' ? '월세' : '매매'),
+                        reviewCount: 0,
+                        rating: 0,
+                        scores: item.scores || { security_safety: 80, traffic: 80, living_comfort: 70, living_infra: 75, property_building: 65, environment: 70 },
+                        swot: item.swot || { s: [], w: [], o: [], t: [] },
+                    };
+                });
+
+                // 원본 데이터 갱신: 기존 매매 유지 + 새 전월세 교체
+                setOriginalListings(prev => [
+                    ...prev.filter(l => l.dealType === 'sale'),
+                    ...mapped,
+                ]);
             }
         } catch (err) {
             console.error('🔥 [전월세 API 에러]', err);
         } finally {
-            setIsLoadingRents(false);
+            setIsLoadingListings(false);
         }
-    };
+    }, [formatMoney]);
 
     // Debounce Ref for Map Movement
     const mapDebounceTimer = useRef<NodeJS.Timeout | null>(null);
@@ -393,31 +515,33 @@ export default function MapPage() {
         };
     }, [activeLayers.cctv]); // 스위치 상태가 바뀔 때마다 리스너 재설정
 
-    // ✅ 전월세 데이터: 지도 이동/줌 변경 시 자동 갱신 (항상 활성)
-    const rentDebounceTimer = useRef<NodeJS.Timeout | null>(null);
+    // ✅ 매매 + 전월세 데이터: 지도 idle 이벤트 시 자동 갱신 (Debounce)
+    const listingsDebounceTimer = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
         if (!mapRef.current || !window.kakao) return;
         const map = mapRef.current;
 
-        const handleRentMapUpdate = () => {
-            if (rentDebounceTimer.current) {
-                clearTimeout(rentDebounceTimer.current);
+        const handleMapIdle = () => {
+            if (listingsDebounceTimer.current) {
+                clearTimeout(listingsDebounceTimer.current);
             }
-            rentDebounceTimer.current = setTimeout(() => {
-                console.log('🔄 [지도 이동] 전월세 데이터 재요청...');
+            listingsDebounceTimer.current = setTimeout(() => {
+                console.log('🔄 [지도 idle] 매매 + 전월세 데이터 재요청...');
+                fetchListings();
                 fetchRentListings();
             }, 500);
         };
 
-        window.kakao.maps.event.addListener(map, 'dragend', handleRentMapUpdate);
-        window.kakao.maps.event.addListener(map, 'zoom_changed', handleRentMapUpdate);
+        // 카카오 맵에는 idle 이벤트가 없으므로 dragend + zoom_changed 조합
+        window.kakao.maps.event.addListener(map, 'dragend', handleMapIdle);
+        window.kakao.maps.event.addListener(map, 'zoom_changed', handleMapIdle);
 
         return () => {
-            window.kakao.maps.event.removeListener(map, 'dragend', handleRentMapUpdate);
-            window.kakao.maps.event.removeListener(map, 'zoom_changed', handleRentMapUpdate);
+            window.kakao.maps.event.removeListener(map, 'dragend', handleMapIdle);
+            window.kakao.maps.event.removeListener(map, 'zoom_changed', handleMapIdle);
         };
-    }, [isMapLoaded]);
+    }, [isMapLoaded, fetchListings, fetchRentListings]);
 
 
     // ----------------------------------------------------------------------
@@ -449,24 +573,18 @@ export default function MapPage() {
 
         mapRef.current = mapInstance;
 
-        // Lazy Load Data
+        // ✅ 초기 데이터 로드 — 실제 API에서 매매 + 전월세 가져오기
         setTimeout(() => {
-            const initialData = MockData.filter(item => {
-                const dist = getDistanceFromLatLonInKm(centerLat, centerLng, item.lat, item.lng);
-                return dist <= 2.0;
-            });
-            setListings(initialData);
+            fetchListings();
+            fetchRentListings();
             setInitialLoading(false);
-        }, 300);
+        }, 500);
 
         // Fetch Slope GeoJSON
         fetch('/data/seoul_slope_v2.json')
             .then(res => res.json())
             .then(data => setSeoulGeoJson(data))
             .catch(err => console.error("Failed to load slope data:", err));
-
-        // 🏠 초기 전월세 데이터 로드
-        setTimeout(() => fetchRentListings(), 500);
 
     }, [isMapLoaded]);
 
@@ -506,7 +624,7 @@ export default function MapPage() {
 
                 content.className = `listing-marker ${bgClass} ${borderClass} text-white`;
                 content.innerHTML = `
-                    ${item.price}
+                    ${item.priceLabel}
                     <i class="fa-solid fa-chevron-right text-[10px] ml-1 opacity-70"></i>
                 `;
             }
@@ -526,60 +644,7 @@ export default function MapPage() {
         });
     }, [listings, isPyeong, activeLayers.reviews]); // Depend on reviews layer
 
-    // 🏠 전월세 마커 렌더링 Effect
-    useEffect(() => {
-        if (!mapRef.current || !window.kakao) return;
-        const mapInstance = mapRef.current;
 
-        // 기존 전월세 마커 제거
-        rentMarkersRef.current.forEach(m => m.setMap(null));
-        rentMarkersRef.current = [];
-
-        rentListings.forEach((item) => {
-            if (!item.lat || !item.lng) return;
-
-            const position = new window.kakao.maps.LatLng(item.lat, item.lng);
-            const content = document.createElement('div');
-
-            // 전세 vs 월세 마커 색상 분리
-            const isJeonse = item.contract_type === '전세';
-            const bgClass = isJeonse ? 'bg-emerald-500' : 'bg-sky-500';
-            const borderClass = isJeonse ? 'border-emerald-700' : 'border-sky-700';
-
-            // 가격 포맷팅 (만원 단위)
-            const formatMoney = (amount: number) => {
-                if (amount >= 10000) return `${(amount / 10000).toFixed(amount % 10000 === 0 ? 0 : 1)}억`;
-                return `${amount}`;
-            };
-
-            let priceLabel = '';
-            if (isJeonse) {
-                priceLabel = `전세 ${formatMoney(item.deposit)}`;
-            } else {
-                priceLabel = `${formatMoney(item.deposit)}/${item.monthly_rent}`;
-            }
-
-            content.className = `listing-marker ${bgClass} ${borderClass} text-white`;
-            content.style.cssText = 'cursor:pointer; padding:4px 8px; border-radius:20px; font-size:11px; font-weight:bold; border-width:2px; white-space:nowrap; box-shadow:0 2px 6px rgba(0,0,0,0.2);';
-            content.innerHTML = `
-                ${priceLabel}
-                <i class="fa-solid fa-chevron-right" style="font-size:9px; margin-left:4px; opacity:0.7;"></i>
-            `;
-
-            content.onclick = () => {
-                showRentDetail(item);
-            };
-
-            const customOverlay = new window.kakao.maps.CustomOverlay({
-                position: position,
-                content: content,
-                yAnchor: 1,
-            });
-
-            customOverlay.setMap(mapInstance);
-            rentMarkersRef.current.push(customOverlay);
-        });
-    }, [rentListings]);
 
     // Re-render Layers (Noise, Academy, Hill, CCTV, Polygon)
     useEffect(() => {
@@ -597,7 +662,10 @@ export default function MapPage() {
 
         // 2. Draw Noise Zones (Red) + Labels
         if (activeLayers.noise) {
-            MOCK_NOISE_ZONES.forEach(zone => {
+            [
+                { center: { lat: 37.481, lng: 126.925 }, radius: 250, label: '🚗 대로변 소음 주의' },
+                { center: { lat: 37.485, lng: 126.921 }, radius: 150, label: '🚄 철도 소음 주의' }
+            ].forEach((zone: any) => {
                 // Circle
                 const circle = new kakao.maps.Circle({
                     center: new kakao.maps.LatLng(zone.center.lat, zone.center.lng),
@@ -629,7 +697,9 @@ export default function MapPage() {
 
         // 3. Draw Academy Zones (Purple) + Labels
         if (activeLayers.academy) {
-            MOCK_ACADEMY_ZONES.forEach(zone => {
+            [
+                { center: { lat: 37.478, lng: 126.952 }, radius: 300, label: '🎓 봉천동 학원가' }
+            ].forEach((zone: any) => {
                 const circle = new kakao.maps.Circle({
                     center: new kakao.maps.LatLng(zone.center.lat, zone.center.lng),
                     radius: zone.radius,
@@ -868,7 +938,18 @@ export default function MapPage() {
 
             // Added Polygon Click Event
             kakao.maps.event.addListener(polygon, 'click', function () {
-                handleZoneClick(MOCK_ZONE_REPORT);
+                handleZoneClick({
+                    name: '\uad00\uc545\uad6c \uc2e0\ub9bc\ub3d9',
+                    grade: 'B',
+                    score: 78,
+                    stats: { police: 2, cctv: '많음', rentAvg: '500/40', jeonseRisk: '85%' },
+                    report: {
+                        safety: '유동인구가 많아 밤길 안전은 양호하나, 주취자 시비가 잦은 편입니다.',
+                        infra: '편의점 밀집도가 서울시 최상위권이며, 1인 가구 맞춤 상권이 발달했습니다.',
+                        traffic: '2호선 신림역 이용이 편리하나, 출퇴근 시간대 혼잡도가 매우 높습니다.'
+                    },
+                    scores: { security_safety: 70, property_building: 60, living_comfort: 80, living_infra: 95, traffic: 90, environment: 60 }
+                });
             });
         }
 
@@ -1011,14 +1092,18 @@ export default function MapPage() {
         setBudget(prev => ({ ...prev, [name]: value }));
     };
 
-    const applyFilter = () => {
-        const filtered = MockData.filter(item => {
+    const applyFilter = useCallback(() => {
+        // originalListings에서 필터링 → listings 상태에 반영 (비파괴적 필터)
+        const filtered = originalListings.filter((item: any) => {
+            // 주거 유형 필터 (APT, OP, YH, DD)
             if (!activeHousingTypes.includes(item.type)) return false;
 
-            const { type: pType, deposit: pDeposit, rent: pRent } = parsePrice(item.price);
+            // 거래 유형 필터 — 'all'이면 통과
+            if (activeDealType !== 'all' && item.dealType !== activeDealType) return false;
 
-            if (activeDealType === 'jeonse' && pType !== 'jeonse') return false;
-            if (activeDealType === 'monthly' && pType !== 'monthly') return false;
+            // 예산 필터 (price 객체 기반: { d, r })
+            const pDeposit = item.price?.d || 0;
+            const pRent = item.price?.r || 0;
 
             const minDep = budget.depositMin ? parseInt(budget.depositMin) : 0;
             const maxDep = budget.depositMax ? parseInt(budget.depositMax) : Infinity;
@@ -1026,29 +1111,43 @@ export default function MapPage() {
             const maxRentVal = budget.rentMax ? parseInt(budget.rentMax) : Infinity;
 
             if (pDeposit < minDep || pDeposit > maxDep) return false;
-            if (pType === 'monthly') {
+            if (item.dealType === 'monthly') {
                 if (pRent < minRentVal || pRent > maxRentVal) return false;
             }
 
-            let pSize = item.size;
+            // 평형대 필터
+            const pSize = item.size;
             if (activeSize === 'under10' && pSize > 10) return false;
 
-            // Review Filter
+            // 리뷰 필터
             if (activeLayers.reviews && item.reviewCount === 0) return false;
 
-            // Grade Filter (Property Grade)
+            // 등급 필터
             if (!activeGrades.includes(item.grade)) return false;
+
+            // 거래 연도 필터
+            if (activeYear !== 'all') {
+                const dateStr = item.contract_date || item.dealYear || '';
+                const year = parseInt(String(dateStr).substring(0, 4), 10);
+                if (isNaN(year)) return false;
+                if (activeYear === '2022~') {
+                    if (year > 2022) return false;
+                } else {
+                    if (year !== parseInt(activeYear, 10)) return false;
+                }
+            }
 
             return true;
         });
         setListings(filtered);
-    };
+    }, [originalListings, activeDealType, activeHousingTypes, activeSize, budget, activeLayers.reviews, activeGrades, activeYear]);
 
+    // originalListings 또는 필터 조건 변경 시 필터 재적용
     useEffect(() => {
         if (!initialLoading) {
             applyFilter();
         }
-    }, [activeDealType, activeHousingTypes, activeSize, budget, activeLayers.reviews, activeGrades, initialLoading]);
+    }, [applyFilter, initialLoading]);
 
 
     // ----------------------------------------------------------------------
@@ -1071,10 +1170,15 @@ export default function MapPage() {
                     </h3>
                 </div>
                 <div className="text-right">
-                    <span className="block font-bold text-blue-600 text-sm">{formatPrice(item.price)}</span>
+                    <span className="block font-bold text-blue-600 text-sm">{item.priceLabel}</span>
                     <span className="text-[10px] text-slate-400">
                         {formatArea(item.size)} · {item.floor}
                     </span>
+                    {item.contract_date && (
+                        <span className="block text-[10px] text-gray-400 mt-0.5">
+                            {item.contract_date.replace(/^(\d{4})-(\d{2})-(\d{2})$/, (_: string, y: string, m: string, d: string) => `${y.slice(2)}.${m}.${d}`)} 거래
+                        </span>
+                    )}
                 </div>
             </div>
 
@@ -1109,6 +1213,11 @@ export default function MapPage() {
         return (
             <div className="animate-fade-in-up">
                 <div className="p-4 space-y-4">
+                    {/* 목록으로 돌아가기 버튼 */}
+                    <button onClick={() => { setSelectedListing(null); setSelectedZone(null); }}
+                        className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 font-bold mb-2 transition-colors">
+                        <i className="fa-solid fa-arrow-left text-xs"></i> 목록으로
+                    </button>
                     {/* 가격 헤더 */}
                     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                         <div className={`p-5 ${isJeonse ? 'bg-gradient-to-r from-emerald-500 to-emerald-600' : 'bg-gradient-to-r from-sky-500 to-sky-600'} text-white`}>
@@ -1206,6 +1315,11 @@ export default function MapPage() {
         return (
             <div className="animate-fade-in-up">
                 <div className="p-4 space-y-4">
+                    {/* 목록으로 돌아가기 버튼 */}
+                    <button onClick={() => { setSelectedListing(null); setSelectedZone(null); }}
+                        className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 font-bold mb-2 transition-colors">
+                        <i className="fa-solid fa-arrow-left text-xs"></i> 목록으로
+                    </button>
                     {/* Safety Analysis Report */}
                     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mb-4">
                         <h3 className="font-bold text-slate-800 mb-4 flex items-center justify-between">
@@ -1262,7 +1376,7 @@ export default function MapPage() {
                         <div className="h-32 bg-slate-100 flex items-center justify-center relative">
                             <i className="fa-solid fa-house text-4xl text-slate-300"></i>
                             <div className="absolute bottom-0 left-0 w-full p-4 bg-gradient-to-t from-black/60 to-transparent">
-                                <span className="text-white font-bold text-xl">{formatPrice(item.price)}</span>
+                                <span className="text-white font-bold text-xl">{item.priceLabel}</span>
                             </div>
                         </div>
                         <div className="p-5">
@@ -1376,403 +1490,445 @@ export default function MapPage() {
     // RENDER MAIN
     // ----------------------------------------------------------------------
     return (
-        <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-white relative">
-            {/* ⚠️ [Required] libraries=services,clusterer is essential for MarkerClusterer */}
-            <Script
-                src="//dapi.kakao.com/v2/maps/sdk.js?appkey=693e61b56c8dfdcac6b196b6fa46e513&libraries=services,clusterer,drawing&autoload=false"
-                strategy="afterInteractive"
-                onLoad={handleScriptLoad}
-            />
+        <>
+            <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-white relative">
+                {/* ⚠️ [Required] libraries=services,clusterer is essential for MarkerClusterer */}
+                <Script
+                    src="//dapi.kakao.com/v2/maps/sdk.js?appkey=693e61b56c8dfdcac6b196b6fa46e513&libraries=services,clusterer,drawing&autoload=false"
+                    strategy="afterInteractive"
+                    onLoad={handleScriptLoad}
+                />
 
-            {/* ================================================================ */}
-            {/* [패널 1] 리스트 패널 (항상 렌더링)                                  */}
-            {/* 모바일: 상세 열리면 숨김 / PC: 항상 표시                             */}
-            {/* ================================================================ */}
-            <aside className={`w-full md:w-[400px] z-30 flex-col bg-white border-r shrink-0 ${(selectedListing || selectedZone) ? 'hidden md:flex' : 'flex'}`}>
-                {/* Search & Filter Header */}
-                <div className="p-4 border-b border-slate-100 bg-white shrink-0 space-y-4">
-                    <div className="relative">
-                        <i className="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400"></i>
-                        <input type="text" defaultValue="관악구 신림동" readOnly
-                            className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 focus:outline-none cursor-default" />
-                    </div>
-
-                    <div className="bg-slate-100 p-1 rounded-lg flex">
-                        <button onClick={() => toggleDealType('jeonse')}
-                            className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${activeDealType === 'jeonse' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}>
-                            전세
-                        </button>
-                        <button onClick={() => toggleDealType('monthly')}
-                            className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${activeDealType === 'monthly' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}>
-                            월세
-                        </button>
-                    </div>
-
-                    <div>
-                        <span className="text-xs font-bold text-slate-400 mb-1.5 block">주거 유형 (중복 선택)</span>
-                        <div className="flex gap-2">
-                            {['APT', 'OP', 'YH', 'DD'].map(type => (
-                                <button key={type} onClick={() => toggleHousingType(type)}
-                                    className={`filter-type-btn flex-1 py-2 rounded-lg border text-xs font-medium transition-colors ${activeHousingTypes.includes(type)
-                                        ? 'active'
-                                        : 'border-slate-200 bg-gray-50 text-slate-500'
-                                        }`}>
-                                    {HOUSING_TYPE_LABELS[type] || type}
-                                </button>
-                            ))}
+                {/* ================================================================ */}
+                {/* [패널 1] 리스트 패널 (항상 렌더링)                                  */}
+                {/* 모바일: 상세 열리면 숨김 / PC: 항상 표시                             */}
+                {/* ================================================================ */}
+                <aside className={`w-full md:w-[400px] z-30 flex-col bg-white border-r shrink-0 ${(selectedListing || selectedZone) ? 'hidden md:flex' : 'flex'}`}>
+                    {/* Search & Filter Header */}
+                    <div className="p-4 border-b border-slate-100 bg-white shrink-0 space-y-4">
+                        <div className="relative">
+                            <i className="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400"></i>
+                            <input type="text" defaultValue="관악구 신림동" readOnly
+                                className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 focus:outline-none cursor-default" />
                         </div>
-                    </div>
 
-                    <div>
-                        <span className="text-xs font-bold text-slate-400 mb-1.5 block">평형대</span>
-                        <div className="flex gap-1.5 overflow-x-auto hide-scrollbar">
-                            <button onClick={() => setActiveSize('all')}
-                                className={`filter-size-btn px-3 py-1.5 rounded-full border border-slate-200 text-xs font-medium whitespace-nowrap ${activeSize === 'all' ? 'active' : 'text-slate-500'}`}>전체</button>
-                            <button onClick={() => setActiveSize('under10')}
-                                className={`filter-size-btn px-3 py-1.5 rounded-full border border-slate-200 text-xs font-medium whitespace-nowrap ${activeSize === 'under10' ? 'active' : 'text-slate-500'}`}>
-                                {isPyeong ? '~10평' : '~33㎡'}
+                        <div className="bg-slate-100 p-1 rounded-lg flex">
+                            <button onClick={() => toggleDealType('all')}
+                                className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${activeDealType === 'all' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}>
+                                전체
                             </button>
-                            <button onClick={() => setActiveSize('10to20')}
-                                className={`filter-size-btn px-3 py-1.5 rounded-full border border-slate-200 text-xs font-medium whitespace-nowrap ${activeSize === '10to20' ? 'active' : 'text-slate-500'}`}>
-                                {isPyeong ? '10~20평' : '33~66㎡'}
+                            <button onClick={() => toggleDealType('sale')}
+                                className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${activeDealType === 'sale' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}>
+                                매매
                             </button>
-                            <button onClick={() => setActiveSize('over30')}
-                                className={`filter-size-btn px-3 py-1.5 rounded-full border border-slate-200 text-xs font-medium whitespace-nowrap ${activeSize === 'over30' ? 'active' : 'text-slate-500'}`}>
-                                {isPyeong ? '30평~' : '99㎡~'}
+                            <button onClick={() => toggleDealType('jeonse')}
+                                className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${activeDealType === 'jeonse' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}>
+                                전세
+                            </button>
+                            <button onClick={() => toggleDealType('monthly')}
+                                className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${activeDealType === 'monthly' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}>
+                                월세
                             </button>
                         </div>
-                    </div>
 
-                    {/* Budget Filter */}
-                    <div className="mt-2 mb-2 pt-2 border-t border-slate-50">
-                        <h3 className="text-xs font-bold text-slate-500 mb-2">예산 설정 (단위: 만원)</h3>
-                        <div className="space-y-2">
-                            <div>
-                                <label className="text-[10px] text-slate-400 mb-1 block">보증금/전세금</label>
-                                <div className="flex items-center gap-2">
-                                    <input type="number" name="depositMin" placeholder="최소"
-                                        value={budget.depositMin} onChange={handleBudgetChange}
-                                        className="w-full bg-white border border-slate-200 rounded px-2 py-1 text-sm font-bold text-slate-900 outline-none focus:border-blue-500" />
-                                    <span className="text-slate-400">~</span>
-                                    <input type="number" name="depositMax" placeholder="최대"
-                                        value={budget.depositMax} onChange={handleBudgetChange}
-                                        className="w-full bg-white border border-slate-200 rounded px-2 py-1 text-sm font-bold text-slate-900 outline-none focus:border-blue-500" />
-                                </div>
+                        <div>
+                            <span className="text-xs font-bold text-slate-400 mb-1.5 block">주거 유형 (중복 선택)</span>
+                            <div className="flex gap-2">
+                                {['APT', 'OP', 'YH', 'DD'].map(type => (
+                                    <button key={type} onClick={() => toggleHousingType(type)}
+                                        className={`filter-type-btn flex-1 py-2 rounded-lg border text-xs font-medium transition-colors ${activeHousingTypes.includes(type)
+                                            ? 'active'
+                                            : 'border-slate-200 bg-gray-50 text-slate-500'
+                                            }`}>
+                                        {HOUSING_TYPE_LABELS[type] || type}
+                                    </button>
+                                ))}
                             </div>
-                            {activeDealType === 'monthly' && (
+                        </div>
+
+                        <div>
+                            <span className="text-xs font-bold text-slate-400 mb-1.5 block">평형대</span>
+                            <div className="flex gap-1.5 overflow-x-auto hide-scrollbar">
+                                <button onClick={() => setActiveSize('all')}
+                                    className={`filter-size-btn px-3 py-1.5 rounded-full border border-slate-200 text-xs font-medium whitespace-nowrap ${activeSize === 'all' ? 'active' : 'text-slate-500'}`}>전체</button>
+                                <button onClick={() => setActiveSize('under10')}
+                                    className={`filter-size-btn px-3 py-1.5 rounded-full border border-slate-200 text-xs font-medium whitespace-nowrap ${activeSize === 'under10' ? 'active' : 'text-slate-500'}`}>
+                                    {isPyeong ? '~10평' : '~33㎡'}
+                                </button>
+                                <button onClick={() => setActiveSize('10to20')}
+                                    className={`filter-size-btn px-3 py-1.5 rounded-full border border-slate-200 text-xs font-medium whitespace-nowrap ${activeSize === '10to20' ? 'active' : 'text-slate-500'}`}>
+                                    {isPyeong ? '10~20평' : '33~66㎡'}
+                                </button>
+                                <button onClick={() => setActiveSize('over30')}
+                                    className={`filter-size-btn px-3 py-1.5 rounded-full border border-slate-200 text-xs font-medium whitespace-nowrap ${activeSize === 'over30' ? 'active' : 'text-slate-500'}`}>
+                                    {isPyeong ? '30평~' : '99㎡~'}
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* 거래 연도 필터 */}
+                        <div>
+                            <span className="text-xs font-bold text-slate-400 mb-1.5 block">거래 연도</span>
+                            <div className="flex gap-1.5">
+                                {[{ value: 'all', label: '전체' }, { value: '2024', label: '2024년' }, { value: '2023', label: '2023년' }, { value: '2022~', label: '2022년~' }].map(opt => (
+                                    <button key={opt.value} onClick={() => setActiveYear(opt.value)}
+                                        className={`filter-size-btn flex-1 px-2 py-1.5 rounded-full border border-slate-200 text-xs font-medium whitespace-nowrap transition-colors ${activeYear === opt.value ? 'active' : 'text-slate-500'}`}>
+                                        {opt.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Budget Filter */}
+                        <div className="mt-2 mb-2 pt-2 border-t border-slate-50">
+                            <h3 className="text-xs font-bold text-slate-500 mb-2">예산 설정 (단위: 만원)</h3>
+                            <div className="space-y-2">
                                 <div>
-                                    <label className="text-[10px] text-slate-400 mb-1 block">월세</label>
+                                    <label className="text-[10px] text-slate-400 mb-1 block">보증금/전세금</label>
                                     <div className="flex items-center gap-2">
-                                        <input type="number" name="rentMin" placeholder="최소"
-                                            value={budget.rentMin} onChange={handleBudgetChange}
+                                        <input type="number" name="depositMin" placeholder="최소"
+                                            value={budget.depositMin} onChange={handleBudgetChange}
                                             className="w-full bg-white border border-slate-200 rounded px-2 py-1 text-sm font-bold text-slate-900 outline-none focus:border-blue-500" />
                                         <span className="text-slate-400">~</span>
-                                        <input type="number" name="rentMax" placeholder="최대"
-                                            value={budget.rentMax} onChange={handleBudgetChange}
+                                        <input type="number" name="depositMax" placeholder="최대"
+                                            value={budget.depositMax} onChange={handleBudgetChange}
                                             className="w-full bg-white border border-slate-200 rounded px-2 py-1 text-sm font-bold text-slate-900 outline-none focus:border-blue-500" />
                                     </div>
                                 </div>
-                            )}
+                                {activeDealType === 'monthly' && (
+                                    <div>
+                                        <label className="text-[10px] text-slate-400 mb-1 block">월세</label>
+                                        <div className="flex items-center gap-2">
+                                            <input type="number" name="rentMin" placeholder="최소"
+                                                value={budget.rentMin} onChange={handleBudgetChange}
+                                                className="w-full bg-white border border-slate-200 rounded px-2 py-1 text-sm font-bold text-slate-900 outline-none focus:border-blue-500" />
+                                            <span className="text-slate-400">~</span>
+                                            <input type="number" name="rentMax" placeholder="최대"
+                                                value={budget.rentMax} onChange={handleBudgetChange}
+                                                className="w-full bg-white border border-slate-200 rounded px-2 py-1 text-sm font-bold text-slate-900 outline-none focus:border-blue-500" />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                {/* 리스트 영역 (항상 리스트만 표시 — 삼항 연산자 제거) */}
-                <div id="sidebar-content" className="flex-1 overflow-y-auto bg-slate-50 p-4 relative">
-                    <div className="space-y-3">
-                        {initialLoading ? (
-                            <div className="text-center py-10">
-                                <i className="fa-solid fa-circle-notch fa-spin text-blue-600 text-lg mb-2"></i>
-                                <p className="text-xs text-slate-400">매물을 불러오는 중...</p>
-                            </div>
-                        ) : listings.length === 0 ? <p className="text-center text-slate-400 text-sm py-10">매물이 없습니다.</p> :
-                            listings.map(item => renderListingItem(item))
-                        }
-                    </div>
-                </div>
-            </aside>
-
-            {/* ================================================================ */}
-            {/* [패널 2] 상세 정보 패널 (선택 시에만 렌더링)                         */}
-            {/* ================================================================ */}
-            {(selectedListing || selectedZone) && (
-                <aside className="fixed inset-0 z-40 md:static md:z-20 md:w-[400px] bg-white md:border-r md:shadow-2xl flex flex-col animate-slide-in-right">
-                    {/* 헤더 영역 */}
-                    <div className="p-4 border-b flex justify-between items-center bg-slate-50 shrink-0">
-                        <h3 className="font-bold text-lg text-slate-800">상세 정보</h3>
-                        <button onClick={restoreList} className="p-2 hover:bg-slate-200 rounded-full transition">
-                            <i className="fa-solid fa-xmark text-xl text-slate-600"></i>
-                        </button>
-                    </div>
-                    {/* 상세 내용 영역 */}
-                    <div className="flex-1 overflow-y-auto custom-scroll">
-                        {selectedZone ? renderZoneReport() : renderDetailView()}
+                    {/* 사이드바 콘텐츠: 항상 리스트만 표시 (상세는 오른쪽 패널에서) */}
+                    <div id="sidebar-content" className="flex-1 overflow-y-auto bg-slate-50 p-4 relative">
+                        <div className="space-y-3">
+                            {initialLoading ? (
+                                <div className="text-center py-10">
+                                    <i className="fa-solid fa-circle-notch fa-spin text-blue-600 text-lg mb-2"></i>
+                                    <p className="text-xs text-slate-400">매물을 불러오는 중...</p>
+                                </div>
+                            ) : listings.length === 0 ? <p className="text-center text-slate-400 text-sm py-10">매물이 없습니다.</p> :
+                                listings.map(item => renderListingItem(item))
+                            }
+                        </div>
                     </div>
                 </aside>
-            )}
 
-            {/* ================================================================ */}
-            {/* [지도 영역]                                                       */}
-            {/* ================================================================ */}
-            <div className="flex-1 relative bg-gray-100 w-full h-full">
-                <section id="map-container" className="w-full h-full relative">
-                    <div ref={mapContainerRef} id="map" className="w-full h-full"></div>
+                {/* ================================================================ */}
+                {/* [패널 2] 상세 정보 패널 (선택 시에만 렌더링)                         */}
+                {/* ================================================================ */}
+                {(selectedListing || selectedZone) && (
+                    <aside className="fixed inset-0 z-40 md:static md:z-20 md:w-[400px] bg-white md:border-r md:shadow-2xl flex flex-col animate-slide-in-right">
+                        {/* 헤더 영역 */}
+                        <div className="p-4 border-b flex justify-between items-center bg-slate-50 shrink-0">
+                            <h3 className="font-bold text-lg text-slate-800">상세 정보</h3>
+                            <button onClick={restoreList} className="p-2 hover:bg-slate-200 rounded-full transition">
+                                <i className="fa-solid fa-xmark text-xl text-slate-600"></i>
+                            </button>
+                        </div>
+                        {/* 상세 내용 영역 */}
+                        <div className="flex-1 overflow-y-auto custom-scroll">
+                            {selectedZone ? renderZoneReport() : renderDetailView()}
+                        </div>
+                    </aside>
+                )}
 
-                    {/* Layer Options Wrapper */}
-                    <div className="absolute top-4 right-4 z-20" id="layer-options-wrapper">
-                        {/* Trigger Button */}
-                        <button onClick={() => setLayerPanelOpen(!layerPanelOpen)} title="지도 옵션"
-                            className="w-10 h-10 bg-white rounded-lg shadow-md border border-slate-200 flex items-center justify-center hover:bg-slate-50 transition-colors cursor-pointer focus:outline-none">
-                            <i className="fa-solid fa-layer-group text-slate-700 text-lg"></i>
-                        </button>
+                {/* ================================================================ */}
+                {/* [지도 영역]                                                       */}
+                {/* ================================================================ */}
+                <div className="flex-1 relative bg-gray-100 w-full h-full">
+                    <section id="map-container" className="w-full h-full relative">
+                        <div ref={mapContainerRef} id="map" className="w-full h-full"></div>
 
-                        {/* Unit Toggle Button */}
-                        <button onClick={() => setIsPyeong(!isPyeong)} title="단위 변환"
-                            className="mt-2 w-10 h-10 bg-white rounded-lg shadow-md border border-slate-200 flex flex-col items-center justify-center hover:bg-slate-50 transition-colors cursor-pointer focus:outline-none text-[10px] font-bold text-slate-600">
-                            <span className={isPyeong ? 'text-blue-600' : 'text-slate-400'}>평</span>
-                            <span className="w-full h-[1px] bg-slate-100 my-0.5"></span>
-                            <span className={!isPyeong ? 'text-blue-600' : 'text-slate-400'}>㎡</span>
-                        </button>
+                        {/* Layer Options Wrapper */}
+                        <div className="absolute top-4 right-4 z-20" id="layer-options-wrapper">
+                            {/* Trigger Button */}
+                            <button onClick={() => setLayerPanelOpen(!layerPanelOpen)} title="지도 옵션"
+                                className="w-10 h-10 bg-white rounded-lg shadow-md border border-slate-200 flex items-center justify-center hover:bg-slate-50 transition-colors cursor-pointer focus:outline-none">
+                                <i className="fa-solid fa-layer-group text-slate-700 text-lg"></i>
+                            </button>
 
-                        {/* Popover Panel (Pixel-Perfect from Legacy) */}
-                        {layerPanelOpen && (
-                            <div id="layer-options-panel" className="absolute top-12 right-0 bg-white rounded-xl shadow-xl p-4 w-64 border border-slate-100 transition-all duration-200 ease-in-out animate-fade-in-up">
-                                <h4 className="font-bold text-gray-800 mb-3 flex items-center gap-2 text-sm">
-                                    <i className="fa-solid fa-layer-group text-blue-600"></i> 레이어 옵션
-                                </h4>
+                            {/* Unit Toggle Button */}
+                            <button onClick={() => setIsPyeong(!isPyeong)} title="단위 변환"
+                                className="mt-2 w-10 h-10 bg-white rounded-lg shadow-md border border-slate-200 flex flex-col items-center justify-center hover:bg-slate-50 transition-colors cursor-pointer focus:outline-none text-[10px] font-bold text-slate-600">
+                                <span className={isPyeong ? 'text-blue-600' : 'text-slate-400'}>평</span>
+                                <span className="w-full h-[1px] bg-slate-100 my-0.5"></span>
+                                <span className={!isPyeong ? 'text-blue-600' : 'text-slate-400'}>㎡</span>
+                            </button>
 
-                                {/* View Mode Selector */}
-                                <div className="mb-4">
-                                    <label className="block text-xs font-bold text-slate-500 mb-1">👀 지도 채색 기준</label>
-                                    <select
-                                        value={currentViewMode}
-                                        onChange={(e) => setCurrentViewMode(e.target.value)}
-                                        className="w-full text-xs border border-slate-200 rounded px-2 py-1.5 text-slate-700 focus:outline-none focus:border-blue-500"
-                                    >
-                                        <option value="total">🏅 종합 안심 등급</option>
-                                        <option value="security">👮 치안/안전 등급</option>
-                                        <option value="building">🏢 물건/건물 등급</option>
-                                        <option value="comfort">🌿 주거 쾌적성 등급</option>
-                                        <option value="infra">🏪 생활 인프라 등급</option>
-                                        <option value="traffic">🚇 교통 접근성 등급</option>
-                                        <option value="env">🔊 환경/소음 등급</option>
-                                    </select>
-                                </div>
+                            {/* Popover Panel (Pixel-Perfect from Legacy) */}
+                            {layerPanelOpen && (
+                                <div id="layer-options-panel" className="absolute top-12 right-0 bg-white rounded-xl shadow-xl p-4 w-64 border border-slate-100 transition-all duration-200 ease-in-out animate-fade-in-up">
+                                    <h4 className="font-bold text-gray-800 mb-3 flex items-center gap-2 text-sm">
+                                        <i className="fa-solid fa-layer-group text-blue-600"></i> 레이어 옵션
+                                    </h4>
 
-                                <div className="flex items-center justify-between mb-3">
-                                    <div className="flex items-center gap-2">
-                                        <span className="w-3 h-3 rounded-full bg-green-500/50 border border-green-500"></span>
-                                        <span className="text-sm font-medium text-gray-700">🛡️ 동네 등급 (행정동)</span>
+                                    {/* View Mode Selector */}
+                                    <div className="mb-4">
+                                        <label className="block text-xs font-bold text-slate-500 mb-1">👀 지도 채색 기준</label>
+                                        <select
+                                            value={currentViewMode}
+                                            onChange={(e) => setCurrentViewMode(e.target.value)}
+                                            className="w-full text-xs border border-slate-200 rounded px-2 py-1.5 text-slate-700 focus:outline-none focus:border-blue-500"
+                                        >
+                                            <option value="total">🏅 종합 안심 등급</option>
+                                            <option value="security">👮 치안/안전 등급</option>
+                                            <option value="building">🏢 물건/건물 등급</option>
+                                            <option value="comfort">🌿 주거 쾌적성 등급</option>
+                                            <option value="infra">🏪 생활 인프라 등급</option>
+                                            <option value="traffic">🚇 교통 접근성 등급</option>
+                                            <option value="env">🔊 환경/소음 등급</option>
+                                        </select>
                                     </div>
-                                    <button
-                                        onClick={() => toggleLayer('polygon')}
-                                        className={`w-11 h-6 rounded-full relative transition-colors ${activeLayers.polygon ? 'bg-blue-600' : 'bg-gray-200'}`}
-                                    >
-                                        <span className={`absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform ${activeLayers.polygon ? 'translate-x-5' : 'translate-x-0'}`}></span>
-                                    </button>
-                                </div>
 
-                                {/* Special Zones */}
-                                <div className="mb-3 pt-3 border-t border-slate-50">
-                                    <h4 className="text-xs font-bold text-slate-500 mb-2">특수 정보</h4>
-                                    <div className="space-y-2">
-                                        <label className="flex items-center justify-between cursor-pointer group">
-                                            <div className="flex items-center gap-2">
-                                                <i className="fa-solid fa-volume-high text-red-500 text-xs"></i>
-                                                <span className="text-sm text-slate-600 group-hover:text-slate-800">소음/유해 구역</span>
-                                            </div>
-                                            <input
-                                                type="checkbox"
-                                                checked={activeLayers.noise}
-                                                onChange={() => toggleLayer('noise')}
-                                                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 border-gray-300"
-                                            />
-                                        </label>
-                                        <label className="flex items-center justify-between cursor-pointer group">
-                                            <div className="flex items-center gap-2">
-                                                <i className="fa-solid fa-graduation-cap text-purple-500 text-xs"></i>
-                                                <span className="text-sm text-slate-600 group-hover:text-slate-800">학원가/상권</span>
-                                            </div>
-                                            <input
-                                                type="checkbox"
-                                                checked={activeLayers.academy}
-                                                onChange={() => toggleLayer('academy')}
-                                                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 border-gray-300"
-                                            />
-                                        </label>
-                                        <label className="flex items-center justify-between cursor-pointer group">
-                                            <div className="flex items-center gap-2">
-                                                <i className="fa-solid fa-mountain text-amber-800 text-xs"></i>
-                                                <span className="text-sm text-slate-600 group-hover:text-slate-800">지형/경사도</span>
-                                            </div>
-                                            <input
-                                                type="checkbox"
-                                                checked={activeLayers.hill}
-                                                onChange={() => toggleLayer('hill')}
-                                                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 border-gray-300"
-                                            />
-                                        </label>
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div className="flex items-center gap-2">
+                                            <span className="w-3 h-3 rounded-full bg-green-500/50 border border-green-500"></span>
+                                            <span className="text-sm font-medium text-gray-700">🛡️ 동네 등급 (행정동)</span>
+                                        </div>
+                                        <button
+                                            onClick={() => toggleLayer('polygon')}
+                                            className={`w-11 h-6 rounded-full relative transition-colors ${activeLayers.polygon ? 'bg-blue-600' : 'bg-gray-200'}`}
+                                        >
+                                            <span className={`absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform ${activeLayers.polygon ? 'translate-x-5' : 'translate-x-0'}`}></span>
+                                        </button>
                                     </div>
-                                </div>
+
+                                    {/* Special Zones */}
+                                    <div className="mb-3 pt-3 border-t border-slate-50">
+                                        <h4 className="text-xs font-bold text-slate-500 mb-2">특수 정보</h4>
+                                        <div className="space-y-2">
+                                            <label className="flex items-center justify-between cursor-pointer group">
+                                                <div className="flex items-center gap-2">
+                                                    <i className="fa-solid fa-volume-high text-red-500 text-xs"></i>
+                                                    <span className="text-sm text-slate-600 group-hover:text-slate-800">소음/유해 구역</span>
+                                                </div>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={activeLayers.noise}
+                                                    onChange={() => toggleLayer('noise')}
+                                                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 border-gray-300"
+                                                />
+                                            </label>
+                                            <label className="flex items-center justify-between cursor-pointer group">
+                                                <div className="flex items-center gap-2">
+                                                    <i className="fa-solid fa-graduation-cap text-purple-500 text-xs"></i>
+                                                    <span className="text-sm text-slate-600 group-hover:text-slate-800">학원가/상권</span>
+                                                </div>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={activeLayers.academy}
+                                                    onChange={() => toggleLayer('academy')}
+                                                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 border-gray-300"
+                                                />
+                                            </label>
+                                            <label className="flex items-center justify-between cursor-pointer group">
+                                                <div className="flex items-center gap-2">
+                                                    <i className="fa-solid fa-mountain text-amber-800 text-xs"></i>
+                                                    <span className="text-sm text-slate-600 group-hover:text-slate-800">지형/경사도</span>
+                                                </div>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={activeLayers.hill}
+                                                    onChange={() => toggleLayer('hill')}
+                                                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 border-gray-300"
+                                                />
+                                            </label>
+                                        </div>
+                                    </div>
 
 
-                                <div className="mb-4">
-                                    <h4 className="text-xs font-bold text-slate-500 mb-2">🏠 개별 물건 등급</h4>
-                                    <div className="flex gap-2">
-                                        {['A', 'B', 'C', 'D'].map(g => (
-                                            <button key={g}
-                                                onClick={() => toggleGrade(g)}
-                                                className={`flex-1 py-1 text-[10px] font-bold text-white rounded shadow-sm hover:opacity-80 transition-opacity
+                                    <div className="mb-4">
+                                        <h4 className="text-xs font-bold text-slate-500 mb-2">🏠 개별 물건 등급</h4>
+                                        <div className="flex gap-2">
+                                            {['A', 'B', 'C', 'D'].map(g => (
+                                                <button key={g}
+                                                    onClick={() => toggleGrade(g)}
+                                                    className={`flex-1 py-1 text-[10px] font-bold text-white rounded shadow-sm hover:opacity-80 transition-opacity
                                                     ${g === 'A' ? 'bg-green-500' : g === 'B' ? 'bg-yellow-500' : g === 'C' ? 'bg-orange-500' : 'bg-red-500'}
                                                     ${!activeGrades.includes(g) ? 'opacity-20 hover:opacity-40 grayscale' : ''}
                                                     `}>
-                                                Grade {g}
-                                            </button>
-                                        ))}
+                                                    Grade {g}
+                                                </button>
+                                            ))}
+                                        </div>
                                     </div>
-                                </div>
 
-                                <div className="flex items-center justify-between mb-3">
-                                    <div className="flex items-center gap-2">
-                                        <span className="w-3 h-3 rounded-full bg-purple-600 flex items-center justify-center">
-                                            <i className="fa-solid fa-star text-[6px] text-white"></i>
-                                        </span>
-                                        <span className="text-sm font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">찐 후기 (입주민)</span>
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div className="flex items-center gap-2">
+                                            <span className="w-3 h-3 rounded-full bg-purple-600 flex items-center justify-center">
+                                                <i className="fa-solid fa-star text-[6px] text-white"></i>
+                                            </span>
+                                            <span className="text-sm font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">찐 후기 (입주민)</span>
+                                        </div>
+                                        <button
+                                            onClick={() => toggleLayer('reviews')}
+                                            className={`w-11 h-6 rounded-full relative transition-colors ${activeLayers.reviews ? 'bg-purple-600' : 'bg-gray-200'}`}
+                                        >
+                                            <span className={`absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform ${activeLayers.reviews ? 'translate-x-5' : 'translate-x-0'}`}></span>
+                                        </button>
                                     </div>
-                                    <button
-                                        onClick={() => toggleLayer('reviews')}
-                                        className={`w-11 h-6 rounded-full relative transition-colors ${activeLayers.reviews ? 'bg-purple-600' : 'bg-gray-200'}`}
-                                    >
-                                        <span className={`absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform ${activeLayers.reviews ? 'translate-x-5' : 'translate-x-0'}`}></span>
-                                    </button>
-                                </div>
 
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <span className="w-3 h-3 rounded-full bg-blue-500 flex items-center justify-center">
-                                            <i className="fa-solid fa-video text-[6px] text-white"></i>
-                                        </span>
-                                        <span className="text-sm font-medium text-gray-700">안심 CCTV (방범용)</span>
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <span className="w-3 h-3 rounded-full bg-blue-500 flex items-center justify-center">
+                                                <i className="fa-solid fa-video text-[6px] text-white"></i>
+                                            </span>
+                                            <span className="text-sm font-medium text-gray-700">안심 CCTV (방범용)</span>
+                                        </div>
+                                        <button
+                                            onClick={() => toggleLayer('cctv')}
+                                            className={`w-11 h-6 rounded-full relative transition-colors ${activeLayers.cctv ? 'bg-blue-600' : 'bg-gray-200'}`}
+                                        >
+                                            <span className={`absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform ${activeLayers.cctv ? 'translate-x-5' : 'translate-x-0'}`}></span>
+                                        </button>
                                     </div>
-                                    <button
-                                        onClick={() => toggleLayer('cctv')}
-                                        className={`w-11 h-6 rounded-full relative transition-colors ${activeLayers.cctv ? 'bg-blue-600' : 'bg-gray-200'}`}
-                                    >
-                                        <span className={`absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform ${activeLayers.cctv ? 'translate-x-5' : 'translate-x-0'}`}></span>
-                                    </button>
-                                </div>
 
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Map Loader */}
+                        {!isMapLoaded && (
+                            <div className="absolute inset-0 bg-white/50 z-50 flex items-center justify-center backdrop-blur-sm">
+                                <div className="bg-white p-4 rounded-xl shadow-xl flex flex-col items-center">
+                                    <i className="fa-solid fa-circle-notch fa-spin text-2xl text-blue-600 mb-2"></i>
+                                    <span className="text-xs font-bold text-slate-600">지도 로딩 중...</span>
+                                </div>
                             </div>
                         )}
-                    </div>
 
-                    {/* Map Loader */}
-                    {!isMapLoaded && (
-                        <div className="absolute inset-0 bg-white/50 z-50 flex items-center justify-center backdrop-blur-sm">
-                            <div className="bg-white p-4 rounded-xl shadow-xl flex flex-col items-center">
-                                <i className="fa-solid fa-circle-notch fa-spin text-2xl text-blue-600 mb-2"></i>
-                                <span className="text-xs font-bold text-slate-600">지도 로딩 중...</span>
-                            </div>
-                        </div>
-                    )}
+                        {/* Map Legend Toggle */}
+                        <button
+                            onClick={() => setIsLegendOpen(!isLegendOpen)}
+                            className="absolute bottom-6 right-4 z-50 bg-white text-slate-700 p-3 rounded-full shadow-lg border border-slate-200 hover:bg-slate-50 transition-colors"
+                            title="지도 범례"
+                        >
+                            <i className="fa-solid fa-circle-question text-xl text-blue-600"></i>
+                        </button>
 
-                    {/* Map Legend Toggle */}
-                    <button
-                        onClick={() => setIsLegendOpen(!isLegendOpen)}
-                        className="absolute bottom-6 right-4 z-50 bg-white text-slate-700 p-3 rounded-full shadow-lg border border-slate-200 hover:bg-slate-50 transition-colors"
-                        title="지도 범례"
-                    >
-                        <i className="fa-solid fa-circle-question text-xl text-blue-600"></i>
-                    </button>
-
-                    {/* Map Legend Panel */}
-                    {isLegendOpen && (
-                        <div className="absolute bottom-20 right-4 z-50 bg-white/95 backdrop-blur-md p-5 rounded-2xl shadow-2xl border border-white/50 w-72 animate-fade-in-up">
-                            <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
-                                <h4 className="font-bold text-slate-800 flex items-center gap-2">
-                                    <i className="fa-solid fa-map-location-dot text-blue-600"></i> 지도 범례
-                                </h4>
-                                <button onClick={() => setIsLegendOpen(false)} className="text-slate-400 hover:text-slate-600">
-                                    <i className="fa-solid fa-xmark"></i>
-                                </button>
-                            </div>
-
-                            <div className="space-y-5">
-                                {/* 1. Zone Grade */}
-                                <div>
-                                    <h5 className="text-[11px] font-bold text-slate-500 mb-2">🛡️ 동네 등급 (행정동 배경색)</h5>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <div className="flex items-center gap-2">
-                                            <span className="w-3 h-3 rounded bg-green-500 shadow-sm"></span>
-                                            <span className="text-xs text-slate-600">A (상위 15%)</span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="w-3 h-3 rounded bg-yellow-400 shadow-sm"></span>
-                                            <span className="text-xs text-slate-600">B (안심)</span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="w-3 h-3 rounded bg-orange-400 shadow-sm"></span>
-                                            <span className="text-xs text-slate-600">C (보통)</span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="w-3 h-3 rounded bg-red-500 shadow-sm"></span>
-                                            <span className="text-xs text-slate-600">D (주의)</span>
-                                        </div>
-                                    </div>
+                        {/* Map Legend Panel */}
+                        {isLegendOpen && (
+                            <div className="absolute bottom-20 right-4 z-50 bg-white/95 backdrop-blur-md p-5 rounded-2xl shadow-2xl border border-white/50 w-72 animate-fade-in-up">
+                                <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
+                                    <h4 className="font-bold text-slate-800 flex items-center gap-2">
+                                        <i className="fa-solid fa-map-location-dot text-blue-600"></i> 지도 범례
+                                    </h4>
+                                    <button onClick={() => setIsLegendOpen(false)} className="text-slate-400 hover:text-slate-600">
+                                        <i className="fa-solid fa-xmark"></i>
+                                    </button>
                                 </div>
 
-                                {/* 2. Property Grade */}
-                                <div>
-                                    <h5 className="text-[11px] font-bold text-slate-500 mb-2">🏠 매물 안전 등급 (마커 색상)</h5>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <div className="flex items-center gap-2">
-                                            <span className="w-3 h-3 rounded-full bg-[#22C55E] shadow-sm"></span>
-                                            <span className="text-xs text-slate-600">A (안심)</span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="w-3 h-3 rounded-full bg-[#EAB308] shadow-sm"></span>
-                                            <span className="text-xs text-slate-600">B (양호)</span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="w-3 h-3 rounded-full bg-[#F97316] shadow-sm"></span>
-                                            <span className="text-xs text-slate-600">C (보통)</span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="w-3 h-3 rounded-full bg-[#EF4444] shadow-sm"></span>
-                                            <span className="text-xs text-slate-600">D (주의)</span>
+                                <div className="space-y-5">
+                                    {/* 1. Zone Grade */}
+                                    <div>
+                                        <h5 className="text-[11px] font-bold text-slate-500 mb-2">🛡️ 동네 등급 (행정동 배경색)</h5>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div className="flex items-center gap-2">
+                                                <span className="w-3 h-3 rounded bg-green-500 shadow-sm"></span>
+                                                <span className="text-xs text-slate-600">A (상위 15%)</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="w-3 h-3 rounded bg-yellow-400 shadow-sm"></span>
+                                                <span className="text-xs text-slate-600">B (안심)</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="w-3 h-3 rounded bg-orange-400 shadow-sm"></span>
+                                                <span className="text-xs text-slate-600">C (보통)</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="w-3 h-3 rounded bg-red-500 shadow-sm"></span>
+                                                <span className="text-xs text-slate-600">D (주의)</span>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
 
-                                {/* 3. Special Info */}
-                                <div>
-                                    <h5 className="text-[11px] font-bold text-slate-500 mb-2">✨ 특수 정보 (아이콘)</h5>
-                                    <div className="space-y-1.5">
-                                        <div className="flex items-center gap-2">
-                                            <span className="w-4 h-4 rounded-full border border-red-500 bg-red-500/30 flex items-center justify-center">
-                                                <i className="fa-solid fa-volume-high text-[8px] text-red-600"></i>
-                                            </span>
-                                            <span className="text-xs text-slate-600">소음/유해 구역</span>
+                                    {/* 2. Property Grade */}
+                                    <div>
+                                        <h5 className="text-[11px] font-bold text-slate-500 mb-2">🏠 매물 안전 등급 (마커 색상)</h5>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div className="flex items-center gap-2">
+                                                <span className="w-3 h-3 rounded-full bg-[#22C55E] shadow-sm"></span>
+                                                <span className="text-xs text-slate-600">A (안심)</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="w-3 h-3 rounded-full bg-[#EAB308] shadow-sm"></span>
+                                                <span className="text-xs text-slate-600">B (양호)</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="w-3 h-3 rounded-full bg-[#F97316] shadow-sm"></span>
+                                                <span className="text-xs text-slate-600">C (보통)</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="w-3 h-3 rounded-full bg-[#EF4444] shadow-sm"></span>
+                                                <span className="text-xs text-slate-600">D (주의)</span>
+                                            </div>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="w-4 h-4 rounded-full border border-purple-500 bg-purple-500/30 flex items-center justify-center">
-                                                <i className="fa-solid fa-graduation-cap text-[8px] text-purple-600"></i>
-                                            </span>
-                                            <span className="text-xs text-slate-600">학원가/상권</span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="w-4 h-4 rounded-full border border-amber-800 bg-amber-800/40 flex items-center justify-center">
-                                                <i className="fa-solid fa-mountain text-[8px] text-amber-900"></i>
-                                            </span>
-                                            <span className="text-xs text-slate-600">지형/경사도</span>
+                                    </div>
+
+                                    {/* 3. Special Info */}
+                                    <div>
+                                        <h5 className="text-[11px] font-bold text-slate-500 mb-2">✨ 특수 정보 (아이콘)</h5>
+                                        <div className="space-y-1.5">
+                                            <div className="flex items-center gap-2">
+                                                <span className="w-4 h-4 rounded-full border border-red-500 bg-red-500/30 flex items-center justify-center">
+                                                    <i className="fa-solid fa-volume-high text-[8px] text-red-600"></i>
+                                                </span>
+                                                <span className="text-xs text-slate-600">소음/유해 구역</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="w-4 h-4 rounded-full border border-purple-500 bg-purple-500/30 flex items-center justify-center">
+                                                    <i className="fa-solid fa-graduation-cap text-[8px] text-purple-600"></i>
+                                                </span>
+                                                <span className="text-xs text-slate-600">학원가/상권</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="w-4 h-4 rounded-full border border-amber-800 bg-amber-800/40 flex items-center justify-center">
+                                                    <i className="fa-solid fa-mountain text-[8px] text-amber-900"></i>
+                                                </span>
+                                                <span className="text-xs text-slate-600">지형/경사도</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    )}
-                </section>
+                        )}
+                    </section>
+                </div>
             </div>
-        </div>
+
+            {/* 토스트 알림 */}
+            {toastMessage && (
+                <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[9999] animate-bounce">
+                    <div className="bg-slate-900/90 text-white px-6 py-3 rounded-xl shadow-2xl text-sm font-medium backdrop-blur-sm border border-slate-700">
+                        {toastMessage}
+                    </div>
+                </div>
+            )}
+
+            {/* 로딩 오버레이 */}
+            {isLoadingListings && (
+                <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[9999]">
+                    <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg border border-slate-200 text-sm text-slate-600 flex items-center gap-2">
+                        <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                        매물 데이터 로딩 중...
+                    </div>
+                </div>
+            )}
+        </>
     );
 }
