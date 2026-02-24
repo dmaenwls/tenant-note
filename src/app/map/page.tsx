@@ -1249,7 +1249,6 @@ export default function MapPage() {
             setTransactionHistory([]);
             return;
         }
-        if (selectedListing._isRent) return; // 전월세 전용 매물은 히스토리 스킵
 
         const fetchHistory = async () => {
             setIsLoadingHistory(true);
@@ -1564,11 +1563,12 @@ export default function MapPage() {
                                         {/* 테이블 바디 */}
                                         <div className="max-h-[300px] overflow-y-auto custom-scroll">
                                             {transactionHistory.map((tx: any, idx: number) => {
-                                                const date = tx.deal_date || tx.contract_date || '-';
+                                                const date = tx.contract_date || tx.deal_date || '-';
                                                 const dateShort = date !== '-' ? date.slice(2).replace(/-/g, '.') : '-';
                                                 const price = tx.deal_amount || tx.deposit || 0;
-                                                const area = tx.area_m2
-                                                    ? (isPyeong ? `${(tx.area_m2 * 0.3025).toFixed(1)}평` : `${tx.area_m2}㎡`)
+                                                const txArea = tx.area_exclusive || tx.area_m2; // 🔥 DB 컬럼명 area_exclusive 우선 적용
+                                                const area = txArea
+                                                    ? (isPyeong ? `${(txArea * 0.3025).toFixed(1)}평` : `${txArea}㎡`)
                                                     : '-';
                                                 return (
                                                     <div key={idx} className={`grid grid-cols-4 gap-0 px-4 py-2.5 text-xs border-b border-slate-50 hover:bg-blue-50/30 transition-colors ${idx === 0 ? 'bg-blue-50/50' : ''}`}>
