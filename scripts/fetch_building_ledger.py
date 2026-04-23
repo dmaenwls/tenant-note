@@ -118,7 +118,6 @@ def fetch_building_info(
     데이터 없으면 None.
     """
     parsed = parse_jibun(jibun)
-    plat_gb_cd = parsed["platGbCd"]  # 🔥 대지구분코드 원복
     bun = parsed["bun"]
     ji  = parsed["ji"]
 
@@ -127,17 +126,8 @@ def fetch_building_info(
         return None
 
     # f-string으로 URL 직접 조립 (params 딕셔너리 사용 금지 → 이중 인코딩 방지)
-    full_url = (
-        f"{API_ENDPOINT}"
-        f"?ServiceKey={API_KEY}"
-        f"&sigunguCd={sigungu_cd}"
-        f"&bjdongCd={bjdong_cd}"
-        f"&platGbCd={plat_gb_cd}"
-        f"&bun={bun}"
-        f"&ji={ji}"
-        f"&numOfRows=10"
-        f"&pageNo=1"
-    )
+    # platGbCd는 무조건 빈칸 (실거래가↔건축물대장 매칭 오류 방지)
+    full_url = f"{API_ENDPOINT}?ServiceKey={API_KEY}&sigunguCd={sigungu_cd}&bjdongCd={bjdong_cd}&platGbCd=&bun={bun}&ji={ji}&numOfRows=10&pageNo=1"
 
     try:
         resp = requests.get(full_url, timeout=10)

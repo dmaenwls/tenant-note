@@ -1,12 +1,38 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import ReviewModal from "./ReviewModal";
+import LoginModal from "./LoginModal";
+import { createClient } from "@/utils/supabase/client";
 
 export default function Header() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [modalOpen, setModalOpen] = useState(false);
+    const [loginModalOpen, setLoginModalOpen] = useState(false);
+    const [userEmail, setUserEmail] = useState<string | null>(null);
+
+    // ── 유저 세션 확인 ──────────────────────────────────
+    useEffect(() => {
+        const checkUser = async () => {
+            try {
+                const supabase = createClient();
+                const { data: { user }, error } = await supabase.auth.getUser();
+                if (!error && user?.email) {
+                    setUserEmail(user.email);
+                }
+            } catch {
+                // 세션 없음 – 무시
+            }
+        };
+        checkUser();
+    }, []);
+
+    const handleSignOut = async () => {
+        const supabase = createClient();
+        await supabase.auth.signOut();
+        window.location.reload();
+    };
 
     return (
         <>
@@ -85,9 +111,26 @@ export default function Header() {
                     </nav>
 
                     <div className="hidden md:flex items-center gap-4">
-                        <button className="text-base font-semibold text-gray-500 hover:text-gray-900 transition">
-                            로그인
-                        </button>
+                        {userEmail ? (
+                            <>
+                                <span className="text-sm font-medium text-gray-500 truncate max-w-[180px]">
+                                    {userEmail}님
+                                </span>
+                                <button
+                                    onClick={handleSignOut}
+                                    className="text-sm font-semibold text-gray-400 hover:text-red-500 transition"
+                                >
+                                    로그아웃
+                                </button>
+                            </>
+                        ) : (
+                            <button
+                                onClick={() => setLoginModalOpen(true)}
+                                className="text-base font-semibold text-gray-500 hover:text-gray-900 transition"
+                            >
+                                로그인
+                            </button>
+                        )}
                         <button
                             onClick={() => setModalOpen(true)}
                             className="rounded-xl bg-blue-600 px-5 py-2.5 text-base font-bold text-white shadow-lg hover:bg-blue-500 transition hover:-translate-y-0.5"
@@ -170,12 +213,26 @@ export default function Header() {
                             </Link>
 
                             <div className="mt-6 border-t border-gray-100 pt-6">
-                                <Link
-                                    href="#"
-                                    className="block w-full rounded-lg bg-gray-100 px-4 py-3 text-center text-base font-bold text-gray-600 hover:bg-gray-200"
-                                >
-                                    로그인
-                                </Link>
+                                {userEmail ? (
+                                    <>
+                                        <p className="text-center text-sm text-gray-500 mb-3 truncate">
+                                            {userEmail}님
+                                        </p>
+                                        <button
+                                            onClick={handleSignOut}
+                                            className="block w-full rounded-lg bg-gray-100 px-4 py-3 text-center text-base font-bold text-gray-600 hover:bg-gray-200"
+                                        >
+                                            로그아웃
+                                        </button>
+                                    </>
+                                ) : (
+                                    <button
+                                        onClick={() => { setMobileMenuOpen(false); setLoginModalOpen(true); }}
+                                        className="block w-full rounded-lg bg-gray-100 px-4 py-3 text-center text-base font-bold text-gray-600 hover:bg-gray-200"
+                                    >
+                                        로그인
+                                    </button>
+                                )}
                                 <button
                                     onClick={() => setModalOpen(true)}
                                     className="mt-3 block w-full rounded-lg bg-blue-600 px-4 py-3 text-center text-base font-bold text-white hover:bg-blue-500"
@@ -189,6 +246,7 @@ export default function Header() {
             </header>
 
             <ReviewModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
+            <LoginModal isOpen={loginModalOpen} onClose={() => setLoginModalOpen(false)} />
         </>
     );
 }
