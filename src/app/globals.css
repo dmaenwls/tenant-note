@@ -252,3 +252,61 @@ aside {
 .animate-slide-in-right {
   animation: slide-in-right 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* === Guide Page Styles === */
+.progress-bar-fill {
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.custom-checkbox:checked + label .check-icon {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.custom-checkbox:checked + label .check-text {
+  text-decoration: line-through;
+  color: #94a3b8;
+}
+
+.step-item.active .step-circle {
+  background-color: #2563eb;
+  color: white;
+  border-color: #2563eb;
+}
+
+.step-item.active .step-title {
+  color: #2563eb;
+  font-weight: 700;
+}
+
+.step-item.completed .step-circle {
+  background-color: #2563eb;
+  color: white;
+  border-color: #2563eb;
+}
+
+.tab-btn.active {
+  color: #2563eb;
+  border-bottom-color: #2563eb;
+  font-weight: 700;
+}
+
+.todo-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+@keyframes guideFadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-guide-fade-in-up {
+  animation: guideFadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
