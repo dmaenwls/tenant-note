@@ -157,29 +157,56 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Viral Game Banner */}
-          <Link
-            href="/game.html"
-            className="block mt-8 transform hover:scale-105 transition-transform duration-300 animate-float"
-          >
-            <div className="bg-gradient-to-r from-violet-600 to-pink-500 rounded-2xl p-1 p-[2px] shadow-2xl">
-              <div className="bg-slate-900/90 hover:bg-slate-900/80 backdrop-blur-sm rounded-xl px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 transition-colors">
-                <div className="text-left">
-                  <span className="bg-clip-text text-transparent bg-gradient-to-r from-violet-200 to-pink-200 font-bold text-xs uppercase tracking-wider mb-1 block">
-                    New • 밸런스 게임
-                  </span>
-                  <h3 className="text-white font-bold text-lg md:text-xl leading-tight">
-                    🤷‍♀️ <span className="text-yellow-300">월세 낼 돈으로 차라리...</span>
-                    <br className="md:hidden" /> 내 주거 성향은 무슨 타입일까?
-                  </h3>
-                </div>
-                <div className="bg-white text-violet-600 px-5 py-2.5 rounded-full font-bold text-sm shrink-0 shadow-lg flex items-center gap-2 group">
-                  3분 만에 테스트하기
-                  <i className="fa-solid fa-chevron-right text-xs group-hover:translate-x-1 transition-transform"></i>
+          {/* Viral Game Banners */}
+          <div className="mt-8 flex flex-col gap-4">
+            {/* MBTI Balance Game */}
+            <Link
+              href="/game"
+              className="block transform hover:scale-[1.02] transition-transform duration-300"
+            >
+              <div className="bg-gradient-to-r from-violet-600 to-pink-500 rounded-2xl p-[2px] shadow-2xl">
+                <div className="bg-slate-900/90 hover:bg-slate-900/80 backdrop-blur-sm rounded-xl px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 transition-colors">
+                  <div className="text-left">
+                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-violet-200 to-pink-200 font-bold text-xs uppercase tracking-wider mb-1 block">
+                      New • 밸런스 게임
+                    </span>
+                    <h3 className="text-white font-bold text-lg md:text-xl leading-tight">
+                      🤷‍♀️ <span className="text-yellow-300">월세 낼 돈으로 차라리...</span>
+                      <br className="md:hidden" /> 내 주거 성향은 무슨 타입일까?
+                    </h3>
+                  </div>
+                  <div className="bg-white text-violet-600 px-5 py-2.5 rounded-full font-bold text-sm shrink-0 shadow-lg flex items-center gap-2 group">
+                    3분 만에 테스트하기
+                    <i className="fa-solid fa-chevron-right text-xs group-hover:translate-x-1 transition-transform"></i>
+                  </div>
                 </div>
               </div>
-            </div>
-          </Link>
+            </Link>
+
+            {/* Landlord Survival Game */}
+            <Link
+              href="/game-landlord"
+              className="block transform hover:scale-[1.02] transition-transform duration-300"
+            >
+              <div className="bg-gradient-to-r from-amber-500 to-orange-600 rounded-2xl p-[2px] shadow-2xl">
+                <div className="bg-slate-900/90 hover:bg-slate-900/80 backdrop-blur-sm rounded-xl px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 transition-colors">
+                  <div className="text-left">
+                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-amber-200 to-orange-200 font-bold text-xs uppercase tracking-wider mb-1 block">
+                      New • 생존 시뮬레이션
+                    </span>
+                    <h3 className="text-white font-bold text-lg md:text-xl leading-tight">
+                      💸 <span className="text-yellow-300">세입자의 눈물은 나의 와인...</span>
+                      <br className="md:hidden" /> 나도 건물주가 된다면?
+                    </h3>
+                  </div>
+                  <div className="bg-white text-orange-600 px-5 py-2.5 rounded-full font-bold text-sm shrink-0 shadow-lg flex items-center gap-2 group">
+                    5분 만에 갓물주 체험하기
+                    <i className="fa-solid fa-chevron-right text-xs group-hover:translate-x-1 transition-transform"></i>
+                  </div>
+                </div>
+              </div>
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -189,7 +216,7 @@ export default function Home() {
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             {/* 1. Reviews */}
             <Link
-              href="/reviews.html"
+              href="/map"
               className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md hover:-translate-y-1 transition-all flex flex-col items-center justify-center gap-3 group text-center border border-slate-100"
             >
               <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-2xl group-hover:bg-blue-600 group-hover:text-white transition-colors">
@@ -207,7 +234,7 @@ export default function Home() {
 
             {/* 2. Safety */}
             <Link
-              href="/safety.html"
+              href="/map"
               className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md hover:-translate-y-1 transition-all flex flex-col items-center justify-center gap-3 group text-center border border-slate-100"
             >
               <div className="w-12 h-12 bg-green-50 text-green-600 rounded-full flex items-center justify-center text-2xl group-hover:bg-green-600 group-hover:text-white transition-colors">
@@ -225,7 +252,7 @@ export default function Home() {
 
             {/* 3. Guide */}
             <Link
-              href="/guide.html"
+              href="/guide"
               className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md hover:-translate-y-1 transition-all flex flex-col items-center justify-center gap-3 group text-center border border-slate-100"
             >
               <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-full flex items-center justify-center text-2xl group-hover:bg-purple-600 group-hover:text-white transition-colors">
@@ -243,7 +270,7 @@ export default function Home() {
 
             {/* 4. Community */}
             <Link
-              href="/community.html"
+              href="/community"
               className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md hover:-translate-y-1 transition-all flex flex-col items-center justify-center gap-3 group text-center border border-slate-100"
             >
               <div className="w-12 h-12 bg-orange-50 text-orange-600 rounded-full flex items-center justify-center text-2xl group-hover:bg-orange-600 group-hover:text-white transition-colors">
@@ -260,7 +287,7 @@ export default function Home() {
 
             {/* 5. Insight */}
             <Link
-              href="/insight.html"
+              href="/insight"
               className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md hover:-translate-y-1 transition-all flex flex-col items-center justify-center gap-3 group text-center border border-slate-100"
             >
               <div className="w-12 h-12 bg-slate-100 text-slate-700 rounded-full flex items-center justify-center text-2xl group-hover:bg-slate-700 group-hover:text-white transition-colors">
@@ -524,7 +551,7 @@ export default function Home() {
 
           <div className="text-center mt-12">
             <Link
-              href="/guide.html"
+              href="/guide"
               className="inline-flex items-center gap-2 bg-slate-900 text-white px-8 py-4 rounded-full font-bold shadow-lg hover:bg-slate-800 transition-all hover:scale-105"
             >
               [계약/이사 가이드] 시작하기{" "}
@@ -555,7 +582,7 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto mb-10">
             {/* Card 1 */}
             <Link
-              href="/insight.html"
+              href="/insight"
               className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 block"
             >
               <div className="h-48 overflow-hidden relative">
